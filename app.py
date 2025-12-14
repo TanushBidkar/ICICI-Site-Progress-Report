@@ -17,6 +17,7 @@ from PIL import Image as PILImage
 from openpyxl.styles import PatternFill  # Add this line
 import os
 from dotenv import load_dotenv
+import gc  # Add this line at the top with other imports
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
@@ -266,64 +267,59 @@ def submit_report():
         return jsonify({'error': str(e)}), 500
 
 def save_images_to_firebase(sol_id, visit_no, form_data, files):
-    """Save uploaded images to Firebase Storage"""
+    """Save uploaded images to Firebase Storage - MEMORY OPTIMIZED"""
+    
+    def process_and_upload_image(file_key, image_file, blob_path):
+        """Helper to process single image and clean up memory"""
+        try:
+            img = Image.open(image_file)
+            
+            # ✅ Aggressive resize to reduce memory
+            max_size = (800, 600)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='JPEG', quality=75, optimize=True)  # Lower quality
+            img_buffer.seek(0)
+            
+            blob = bucket.blob(blob_path)
+            blob.upload_from_file(img_buffer, content_type='image/jpeg')
+            
+            # ✅ Immediate cleanup
+            img.close()
+            img_buffer.close()
+            del img
+            del img_buffer
+            gc.collect()  # Force garbage collection
+            
+            return True
+        except Exception as e:
+            print(f"Error saving {file_key}: {e}")
+            return False
     
     # Work Progress Images
     work_count = int(form_data.get('work_count', 0))
     for i in range(work_count):
         file_key = f'work_image_{i}'
         if file_key in files:
-            try:
-                image_file = files[file_key]
-                img = Image.open(image_file)
-                
-                img_buffer = io.BytesIO()
-                img.save(img_buffer, format='JPEG', quality=85)
-                img_buffer.seek(0)
-                
-                blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/work_{i}.jpg"
-                blob = bucket.blob(blob_path)
-                blob.upload_from_file(img_buffer, content_type='image/jpeg')
-            except Exception as e:
-                print(f"Error saving work image {i}: {e}")
+            blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/work_{i}.jpg"
+            process_and_upload_image(file_key, files[file_key], blob_path)
     
     # Quality Images
     quality_count = int(form_data.get('quality_count', 0))
     for i in range(quality_count):
         file_key = f'qual_image_{i}'
         if file_key in files:
-            try:
-                image_file = files[file_key]
-                img = Image.open(image_file)
-                
-                img_buffer = io.BytesIO()
-                img.save(img_buffer, format='JPEG', quality=85)
-                img_buffer.seek(0)
-                
-                blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/qual_{i}.jpg"
-                blob = bucket.blob(blob_path)
-                blob.upload_from_file(img_buffer, content_type='image/jpeg')
-            except Exception as e:
-                print(f"Error saving qual image {i}: {e}")
+            blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/qual_{i}.jpg"
+            process_and_upload_image(file_key, files[file_key], blob_path)
     
     # Make/Model Images
     make_count = int(form_data.get('make_count', 0))
     for i in range(make_count):
         file_key = f'make_image_{i}'
         if file_key in files:
-            try:
-                image_file = files[file_key]
-                img = Image.open(image_file)
-                
-                img_buffer = io.BytesIO()
-                img.save(img_buffer, format='JPEG', quality=85)
-                img_buffer.seek(0)
-                
-                blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/make_{i}.jpg"
-                blob = bucket.blob(blob_path)
-                blob.upload_from_file(img_buffer, content_type='image/jpeg')
-            except Exception as e:
-                print(f"Error saving make image {i}: {e}")
+            blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/make_{i}.jpg"
+            process_and_upload_image(file_key, files[file_key], blob_path)
 def fill_progress_report(wb, data):
     """Fill the Progress Report sheet"""
     ws = wb['Progress Report']
@@ -678,6 +674,10 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     ws.add_image(xl_img)
                     
                     ws[f'D{current_row}'].value = ""
+                    pil_img.close()
+                    img_byte_arr.close()
+                    del pil_img
+                    del img_byte_arr
                 except Exception as e:
                     print(f"Error inserting work image {i}: {e}")
                     ws[f'D{current_row}'].value = "Error loading image"
@@ -781,6 +781,10 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     ws.add_image(xl_img)
                     
                     ws[f'D{current_row}'].value = ""
+                    pil_img.close()
+                    img_byte_arr.close()
+                    del pil_img
+                    del img_byte_arr
                 except Exception as e:
                     print(f"Error inserting qual image {i}: {e}")
                     ws[f'D{current_row}'].value = "Error loading image"
@@ -884,6 +888,10 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     ws.add_image(xl_img)
                     
                     ws[f'D{current_row}'].value = ""
+                    pil_img.close()
+                    img_byte_arr.close()
+                    del pil_img
+                    del img_byte_arr
                 except Exception as e:
                     print(f"Error inserting make image {i}: {e}")
                     ws[f'D{current_row}'].value = "Error loading image"
@@ -1257,31 +1265,49 @@ def update_visit_percentages(sol_id, current_visit, data):
 @app.route('/generate-report', methods=['POST'])
 def generate_report():
     try:
-        form_data = request.form.to_dict()
-        files = request.files # <--- Add this
+        print("📥 Starting report generation...")
         
-        sol_id = form_data['sol_id']
-        visit_no = form_data['visit_no']
-        project_name = form_data['project_name']
+        form_data = request.form.to_dict()
+        files = request.files
+        
+        sol_id = form_data.get('sol_id')
+        visit_no = form_data.get('visit_no')
+        project_name = form_data.get('project_name')
+        
+        if not sol_id or not visit_no or not project_name:
+            return jsonify({'error': 'Missing required fields'}), 400
 
+        print(f"📊 Saving images for SOL: {sol_id}, Visit: {visit_no}")
         save_images_to_firebase(sol_id, visit_no, form_data, files)
         
+        print("📄 Loading Excel template...")
         wb = openpyxl.load_workbook(TEMPLATE_PATH)
         
+        print("✍️ Filling Progress Report...")
         fill_progress_report(wb, form_data)
         
-        # Pass 'files' to this function now
+        print("📸 Filling Photographs Sheet...")
         fill_photographs_sheet(wb, form_data, files, sol_id, visit_no)
         
+        print("✅ Filling Quality Sheet...")
         fill_quality_sheet(wb, form_data)
         
+        print("💾 Saving to memory...")
         excel_buffer = io.BytesIO()
         wb.save(excel_buffer)
         excel_buffer.seek(0)
         
         # Save Draft Data JSON
+        print("☁️ Uploading to Firebase...")
         blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json"
         bucket.blob(blob_path).upload_from_string(json.dumps(form_data), content_type='application/json')
+        
+        print("✅ Report generation complete!")
+        
+        # ✅ Clean up workbook
+        wb.close()
+        del wb
+        gc.collect()
         
         return send_file(
             excel_buffer,
@@ -1290,7 +1316,10 @@ def generate_report():
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"❌ Generate report error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 @app.route('/upload-final-report', methods=['POST'])
 def upload_final_report():
