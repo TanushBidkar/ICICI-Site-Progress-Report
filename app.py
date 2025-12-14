@@ -674,10 +674,7 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     ws.add_image(xl_img)
                     
                     ws[f'D{current_row}'].value = ""
-                    pil_img.close()
-                    img_byte_arr.close()
-                    del pil_img
-                    del img_byte_arr
+                    
                 except Exception as e:
                     print(f"Error inserting work image {i}: {e}")
                     ws[f'D{current_row}'].value = "Error loading image"
@@ -781,10 +778,7 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     ws.add_image(xl_img)
                     
                     ws[f'D{current_row}'].value = ""
-                    pil_img.close()
-                    img_byte_arr.close()
-                    del pil_img
-                    del img_byte_arr
+                    
                 except Exception as e:
                     print(f"Error inserting qual image {i}: {e}")
                     ws[f'D{current_row}'].value = "Error loading image"
@@ -888,10 +882,7 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     ws.add_image(xl_img)
                     
                     ws[f'D{current_row}'].value = ""
-                    pil_img.close()
-                    img_byte_arr.close()
-                    del pil_img
-                    del img_byte_arr
+                    
                 except Exception as e:
                     print(f"Error inserting make image {i}: {e}")
                     ws[f'D{current_row}'].value = "Error loading image"
@@ -1269,7 +1260,7 @@ def generate_report():
         print("📥 STARTING REPORT GENERATION")
         print("=" * 50)
         
-        # 1. Get form data
+        # 1-4. [Keep your existing code]
         form_data = request.form.to_dict()
         files = request.files
         
@@ -1282,23 +1273,17 @@ def generate_report():
         print(f"📋 Project: {project_name}")
         
         if not sol_id or not visit_no or not project_name:
-            print("❌ Missing required fields")
-            return jsonify({'error': 'Missing required fields (SOL ID, Visit No, or Project Name)'}), 400
+            return jsonify({'error': 'Missing required fields'}), 400
 
-        # 2. Count images
         work_count = int(form_data.get('work_count', 0))
         quality_count = int(form_data.get('quality_count', 0))
         make_count = int(form_data.get('make_count', 0))
         
         print(f"📸 Images: Work={work_count}, Quality={quality_count}, Make={make_count}")
         
-        # ✅ SKIP FIREBASE UPLOAD FOR NOW (to test if this is the issue)
-        # save_images_to_firebase(sol_id, visit_no, form_data, files)
-        
         # 3. Load template
         print("📄 Loading Excel template...")
         if not os.path.exists(TEMPLATE_PATH):
-            print(f"❌ Template not found at: {TEMPLATE_PATH}")
             return jsonify({'error': 'Excel template not found'}), 500
             
         wb = openpyxl.load_workbook(TEMPLATE_PATH)
@@ -1320,9 +1305,13 @@ def generate_report():
         # 5. Save to memory
         print("💾 Saving Excel to memory...")
         excel_buffer = io.BytesIO()
-        wb.save(excel_buffer)
+        wb.save(excel_buffer)  # ✅ This will now work
         excel_buffer.seek(0)
         print("✅ Excel saved to buffer")
+        
+        # ✅ NOW close the workbook AFTER saving
+        wb.close()
+        print("✅ Workbook closed")
         
         # 6. Save JSON to Firebase
         print("☁️ Saving JSON to Firebase...")
@@ -1332,11 +1321,9 @@ def generate_report():
             print("✅ JSON saved to Firebase")
         except Exception as fb_error:
             print(f"⚠️ Firebase JSON upload failed: {fb_error}")
-            # Continue anyway - don't fail the whole request
         
-        # 7. Cleanup
-        wb.close()
-        print("✅ Workbook closed")
+        # 7. Cleanup memory
+        gc.collect()
         
         print("=" * 50)
         print("✅ REPORT GENERATION COMPLETE")
