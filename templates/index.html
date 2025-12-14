@@ -1,0 +1,1998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Site Progress Report</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-header h2 {
+            font-size: 1.5em;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    font-size: 1.5em;
+    line-height: 1.5;
+}
+
+        .percentage-grid {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr) 2fr;
+            gap: 10px;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .percentage-grid .label {
+            font-weight: 600;
+        }
+
+        .percentage-grid input {
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .percentage-header {
+            display: grid;
+            grid-template-columns: 2fr repeat(4, 1fr) 2fr;
+            gap: 10px;
+            font-weight: 700;
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .photo-entry {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px dashed #667eea;
+        }
+
+        .photo-preview {
+            max-width: 300px;
+            max-height: 200px;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-add {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            justify-content: space-between;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            position: relative;
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: -1;
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #999;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .step.active .step-circle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .step.completed .step-circle {
+            background: #28a745;
+            color: white;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            animation: zoomIn 0.3s;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.8); }
+            to { transform: scale(1); }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .crop-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.crop-modal.show {
+    display: flex;
+}
+
+.crop-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    max-width: 90%;
+    max-height: 90%;
+    overflow: auto;
+}
+
+.crop-preview-box {
+    max-width: 100%;
+    max-height: 500px;
+    margin-bottom: 20px;
+}
+
+.excel-preview {
+    width: 690px;
+    height: 416px;
+    border: 3px solid #667eea;
+    margin: 20px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f8f9fa;
+    position: relative;
+}
+
+.excel-preview::before {
+    content: 'Excel Cell Preview (690x416px)';
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: bold;
+    color: #667eea;
+}
+
+.excel-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ Automated Site Progress Report</h1>
+            <p>Track your construction project milestones efficiently</p>
+        </div>
+
+        <div class="content">
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-circle">1</div>
+                    <div>Initial Info</div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-circle">2</div>
+                    <div>Progress Report</div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-circle">3</div>
+                    <div>Photographs</div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-circle">4</div>
+                    <div>Quality & Challenges</div>
+                </div>
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 25%"></div>
+            </div>
+
+            <div id="alertBox" class="alert"></div>
+
+            <form id="reportForm">
+                <!-- Section 1: Initial Information -->
+                <div class="section active" id="section1">
+                    <div class="section-header">
+                        <span>📋</span>
+                        <h2>Initial Information</h2>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="sol_id">SOL ID *</label>
+                            <input type="text" id="sol_id" name="sol_id" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="project_name">Project Name *</label>
+                            <input type="text" id="project_name" name="project_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="visit_no">Visit Number *</label>
+                            <select id="visit_no" name="visit_no" required>
+                                <option value="">Select Visit</option>
+                                <option value="1">Visit 1</option>
+                                <option value="2">Visit 2</option>
+                                <option value="3">Visit 3</option>
+                                <option value="4">Visit 4</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="btn-group">
+                        <div></div>
+                        <button type="button" class="btn btn-primary" onclick="nextSection(1)">
+                            Next →
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 2: Progress Report -->
+<div class="section" id="section2">
+    <div class="section-header">
+        <span>📊</span>
+        <h2>Progress Report</h2>
+    </div>
+
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="branch_area">Branch Area</label>
+            <input type="text" id="branch_area" name="branch_area">
+        </div>
+        <div class="form-group">
+            <label for="branch_code">Branch Code</label>
+            <input type="text" id="branch_code" name="branch_code" readonly style="background-color: #f0f0f0;">
+        </div>
+        <div class="form-group">
+            <label for="date_of_visit">Date of Visit</label>
+            <input type="date" id="date_of_visit" name="date_of_visit">
+        </div>
+    </div>
+
+    
+    <div class="percentage-header">
+        <div>Milestone</div>
+        <div>Visit 1 (%)</div>
+        <div>Visit 2 (%)</div>
+        <div>Visit 3 (%)</div>
+        <div>Visit 4 (%)</div>
+        <div>Remarks</div>
+    </div>
+
+    <h3 style="margin: 30px 0 20px; color: #667eea;">I. Civil and Related Works</h3>
+
+    <div class="percentage-grid">
+        <div class="label">Demolition & Dismantling</div>
+        <input type="number" id="demolition_visit1" name="demolition_visit1" min="0" max="100">
+        <input type="number" id="demolition_visit2" name="demolition_visit2" min="0" max="100">
+        <input type="number" id="demolition_visit3" name="demolition_visit3" min="0" max="100">
+        <input type="number" id="demolition_visit4" name="demolition_visit4" min="0" max="100">
+        <input type="text" id="demolition_remark" name="demolition_remark">
+    </div>
+
+    <div class="percentage-grid">
+        <div class="label">Block Work</div>
+        <input type="number" id="block_work_visit1" name="block_work_visit1" min="0" max="100">
+        <input type="number" id="block_work_visit2" name="block_work_visit2" min="0" max="100">
+        <input type="number" id="block_work_visit3" name="block_work_visit3" min="0" max="100">
+        <input type="number" id="block_work_visit4" name="block_work_visit4" min="0" max="100">
+        <input type="text" id="block_work_remark" name="block_work_remark">
+    </div>
+
+    <div class="percentage-grid">
+        <div class="label">Internal Plaster</div>
+        <input type="number" id="internal_plaster_visit1" name="internal_plaster_visit1" min="0" max="100">
+        <input type="number" id="internal_plaster_visit2" name="internal_plaster_visit2" min="0" max="100">
+        <input type="number" id="internal_plaster_visit3" name="internal_plaster_visit3" min="0" max="100">
+        <input type="number" id="internal_plaster_visit4" name="internal_plaster_visit4" min="0" max="100">
+        <input type="text" id="internal_plaster_remark" name="internal_plaster_remark">
+    </div>
+
+    <div class="percentage-grid">
+        <div class="label">RCC Work / Strong Room</div>
+        <input type="number" id="rcc_wall_visit1" name="rcc_wall_visit1" min="0" max="100">
+        <input type="number" id="rcc_wall_visit2" name="rcc_wall_visit2" min="0" max="100">
+        <input type="number" id="rcc_wall_visit3" name="rcc_wall_visit3" min="0" max="100">
+        <input type="number" id="rcc_wall_visit4" name="rcc_wall_visit4" min="0" max="100">
+        <input type="text" id="rcc_wall_remark" name="rcc_wall_remark">
+    </div>
+
+    <div class="percentage-grid">
+        <div class="label">PCC Work</div>
+        <input type="number" id="pcc_work_visit1" name="pcc_work_visit1" min="0" max="100">
+        <input type="number" id="pcc_work_visit2" name="pcc_work_visit2" min="0" max="100">
+        <input type="number" id="pcc_work_visit3" name="pcc_work_visit3" min="0" max="100">
+        <input type="number" id="pcc_work_visit4" name="pcc_work_visit4" min="0" max="100">
+        <input type="text" id="pcc_work_remark" name="pcc_work_remark">
+    </div>
+
+    <div class="percentage-grid">
+        <div class="label">POP Punning</div>
+        <input type="number" id="pop_punning_visit1" name="pop_punning_visit1" min="0" max="100">
+        <input type="number" id="pop_punning_visit2" name="pop_punning_visit2" min="0" max="100">
+        <input type="number" id="pop_punning_visit3" name="pop_punning_visit3" min="0" max="100">
+        <input type="number" id="pop_punning_visit4" name="pop_punning_visit4" min="0" max="100">
+        <input type="text" id="pop_punning_remark" name="pop_punning_remark">
+    </div>
+
+    <div class="percentage-grid">
+        <div class="label">Waterproofing</div>
+        <input type="number" id="waterproofing_visit1" name="waterproofing_visit1" min="0" max="100">
+        <input type="number" id="waterproofing_visit2" name="waterproofing_visit2" min="0" max="100">
+        <input type="number" id="waterproofing_visit3" name="waterproofing_visit3" min="0" max="100">
+        <input type="number" id="waterproofing_visit4" name="waterproofing_visit4" min="0" max="100">
+        <input type="text" id="waterproofing_remark" name="waterproofing_remark">
+    </div>
+    <!-- Flooring work -->
+<div class="percentage-grid">
+    <div class="label">Flooring work</div>
+    <input type="number" id="flooring_visit1" name="flooring_visit1" min="0" max="100">
+    <input type="number" id="flooring_visit2" name="flooring_visit2" min="0" max="100">
+    <input type="number" id="flooring_visit3" name="flooring_visit3" min="0" max="100">
+    <input type="number" id="flooring_visit4" name="flooring_visit4" min="0" max="100">
+    <input type="text" id="flooring_remark" name="flooring_remark">
+</div>
+
+<!-- Dado work -->
+<div class="percentage-grid">
+    <div class="label">Dado work</div>
+    <input type="number" id="dado_visit1" name="dado_visit1" min="0" max="100">
+    <input type="number" id="dado_visit2" name="dado_visit2" min="0" max="100">
+    <input type="number" id="dado_visit3" name="dado_visit3" min="0" max="100">
+    <input type="number" id="dado_visit4" name="dado_visit4" min="0" max="100">
+    <input type="text" id="dado_remark" name="dado_remark">
+</div>
+
+<!-- Painting work -->
+<div class="percentage-grid">
+    <div class="label">Painting work</div>
+    <input type="number" id="painting_visit1" name="painting_visit1" min="0" max="100">
+    <input type="number" id="painting_visit2" name="painting_visit2" min="0" max="100">
+    <input type="number" id="painting_visit3" name="painting_visit3" min="0" max="100">
+    <input type="number" id="painting_visit4" name="painting_visit4" min="0" max="100">
+    <input type="text" id="painting_remark" name="painting_remark">
+</div>
+
+<!-- Plumbing work -->
+<div class="percentage-grid">
+    <div class="label">Plumbing work</div>
+    <input type="number" id="plumbing_visit1" name="plumbing_visit1" min="0" max="100">
+    <input type="number" id="plumbing_visit2" name="plumbing_visit2" min="0" max="100">
+    <input type="number" id="plumbing_visit3" name="plumbing_visit3" min="0" max="100">
+    <input type="number" id="plumbing_visit4" name="plumbing_visit4" min="0" max="100">
+    <input type="text" id="plumbing_remark" name="plumbing_remark">
+</div>
+
+<h3 style="margin: 30px 0 20px; color: #667eea;">II. Carpentry Work</h3>
+    <!-- Partition Work -->
+<div class="percentage-grid">
+    <div class="label">Partition Work</div>
+    <input type="number" id="partition_visit1" name="partition_visit1" min="0" max="100">
+    <input type="number" id="partition_visit2" name="partition_visit2" min="0" max="100">
+    <input type="number" id="partition_visit3" name="partition_visit3" min="0" max="100">
+    <input type="number" id="partition_visit4" name="partition_visit4" min="0" max="100">
+    <input type="text" id="partition_remark" name="partition_remark">
+</div>
+
+<!-- Paneling Work -->
+<div class="percentage-grid">
+    <div class="label">Paneling Work</div>
+    <input type="number" id="paneling_visit1" name="paneling_visit1" min="0" max="100">
+    <input type="number" id="paneling_visit2" name="paneling_visit2" min="0" max="100">
+    <input type="number" id="paneling_visit3" name="paneling_visit3" min="0" max="100">
+    <input type="number" id="paneling_visit4" name="paneling_visit4" min="0" max="100">
+    <input type="text" id="paneling_remark" name="paneling_remark">
+</div>
+
+<!-- Door & Window -->
+<div class="percentage-grid">
+    <div class="label">Door & Window</div>
+    <input type="number" id="door_window_visit1" name="door_window_visit1" min="0" max="100">
+    <input type="number" id="door_window_visit2" name="door_window_visit2" min="0" max="100">
+    <input type="number" id="door_window_visit3" name="door_window_visit3" min="0" max="100">
+    <input type="number" id="door_window_visit4" name="door_window_visit4" min="0" max="100">
+    <input type="text" id="door_window_remark" name="door_window_remark">
+</div>
+
+<!-- False Ceiling work -->
+<div class="percentage-grid">
+    <div class="label">False Ceiling work</div>
+    <input type="number" id="false_ceiling_visit1" name="false_ceiling_visit1" min="0" max="100">
+    <input type="number" id="false_ceiling_visit2" name="false_ceiling_visit2" min="0" max="100">
+    <input type="number" id="false_ceiling_visit3" name="false_ceiling_visit3" min="0" max="100">
+    <input type="number" id="false_ceiling_visit4" name="false_ceiling_visit4" min="0" max="100">
+    <input type="text" id="false_ceiling_remark" name="false_ceiling_remark">
+</div>
+
+<!-- Loose furniture & storage -->
+<div class="percentage-grid">
+    <div class="label">Loose furniture & storage</div>
+    <input type="number" id="loose_furniture_visit1" name="loose_furniture_visit1" min="0" max="100">
+    <input type="number" id="loose_furniture_visit2" name="loose_furniture_visit2" min="0" max="100">
+    <input type="number" id="loose_furniture_visit3" name="loose_furniture_visit3" min="0" max="100">
+    <input type="number" id="loose_furniture_visit4" name="loose_furniture_visit4" min="0" max="100">
+    <input type="text" id="loose_furniture_remark" name="loose_furniture_remark">
+</div>
+
+<!-- Aluminium Skirting Work -->
+<div class="percentage-grid">
+    <div class="label">Aluminium Skirting Work</div>
+    <input type="number" id="alum_skirting_visit1" name="alum_skirting_visit1" min="0" max="100">
+    <input type="number" id="alum_skirting_visit2" name="alum_skirting_visit2" min="0" max="100">
+    <input type="number" id="alum_skirting_visit3" name="alum_skirting_visit3" min="0" max="100">
+    <input type="number" id="alum_skirting_visit4" name="alum_skirting_visit4" min="0" max="100">
+    <input type="text" id="alum_skirting_remark" name="alum_skirting_remark">
+</div>
+
+<!-- Window Blind Fixing -->
+<div class="percentage-grid">
+    <div class="label">Window Blind Fixing</div>
+    <input type="number" id="window_blind_visit1" name="window_blind_visit1" min="0" max="100">
+    <input type="number" id="window_blind_visit2" name="window_blind_visit2" min="0" max="100">
+    <input type="number" id="window_blind_visit3" name="window_blind_visit3" min="0" max="100">
+    <input type="number" id="window_blind_visit4" name="window_blind_visit4" min="0" max="100">
+    <input type="text" id="window_blind_remark" name="window_blind_remark">
+</div>
+
+<!-- Signage Installation Work -->
+<div class="percentage-grid">
+    <div class="label">Signage Installation Work</div>
+    <input type="number" id="signage_visit1" name="signage_visit1" min="0" max="100">
+    <input type="number" id="signage_visit2" name="signage_visit2" min="0" max="100">
+    <input type="number" id="signage_visit3" name="signage_visit3" min="0" max="100">
+    <input type="number" id="signage_visit4" name="signage_visit4" min="0" max="100">
+    <input type="text" id="signage_remark" name="signage_remark">
+</div>
+
+ <h3 style="margin: 30px 0 20px; color: #667eea;">III. Electrical</h3>
+ <!-- Pipe Conduiting, cable Tray -->
+<div class="percentage-grid">
+    <div class="label">Pipe Conduiting, cable Tray</div>
+    <input type="number" id="pipe_conduit_visit1" name="pipe_conduit_visit1" min="0" max="100">
+    <input type="number" id="pipe_conduit_visit2" name="pipe_conduit_visit2" min="0" max="100">
+    <input type="number" id="pipe_conduit_visit3" name="pipe_conduit_visit3" min="0" max="100">
+    <input type="number" id="pipe_conduit_visit4" name="pipe_conduit_visit4" min="0" max="100">
+    <input type="text" id="pipe_conduit_remark" name="pipe_conduit_remark">
+</div>
+
+<!-- Raceway work -->
+<div class="percentage-grid">
+    <div class="label">Raceway work</div>
+    <input type="number" id="raceway_visit1" name="raceway_visit1" min="0" max="100">
+    <input type="number" id="raceway_visit2" name="raceway_visit2" min="0" max="100">
+    <input type="number" id="raceway_visit3" name="raceway_visit3" min="0" max="100">
+    <input type="number" id="raceway_visit4" name="raceway_visit4" min="0" max="100">
+    <input type="text" id="raceway_remark" name="raceway_remark">
+</div>
+
+<!-- Wiring -->
+<div class="percentage-grid">
+    <div class="label">Wiring</div>
+    <input type="number" id="wiring_visit1" name="wiring_visit1" min="0" max="100">
+    <input type="number" id="wiring_visit2" name="wiring_visit2" min="0" max="100">
+    <input type="number" id="wiring_visit3" name="wiring_visit3" min="0" max="100">
+    <input type="number" id="wiring_visit4" name="wiring_visit4" min="0" max="100">
+    <input type="text" id="wiring_remark" name="wiring_remark">
+</div>
+
+<!-- Fixtures -->
+<div class="percentage-grid">
+    <div class="label">Fixtures</div>
+    <input type="number" id="fixtures_visit1" name="fixtures_visit1" min="0" max="100">
+    <input type="number" id="fixtures_visit2" name="fixtures_visit2" min="0" max="100">
+    <input type="number" id="fixtures_visit3" name="fixtures_visit3" min="0" max="100">
+    <input type="number" id="fixtures_visit4" name="fixtures_visit4" min="0" max="100">
+    <input type="text" id="fixtures_remark" name="fixtures_remark">
+</div>
+
+<!-- Main LT panel -->
+<div class="percentage-grid">
+    <div class="label">Main LT panel</div>
+    <input type="number" id="main_lt_visit1" name="main_lt_visit1" min="0" max="100">
+    <input type="number" id="main_lt_visit2" name="main_lt_visit2" min="0" max="100">
+    <input type="number" id="main_lt_visit3" name="main_lt_visit3" min="0" max="100">
+    <input type="number" id="main_lt_visit4" name="main_lt_visit4" min="0" max="100">
+    <input type="text" id="main_lt_remark" name="main_lt_remark">
+</div>
+
+<h3 style="margin: 30px 0 20px; color: #667eea;">IV. HVAC</h3>
+
+<!-- Installation of Indoor Unit -->
+<div class="percentage-grid">
+    <div class="label">Installation of Indoor Unit</div>
+    <input type="number" id="hvac_indoor_visit1" name="hvac_indoor_visit1" min="0" max="100">
+    <input type="number" id="hvac_indoor_visit2" name="hvac_indoor_visit2" min="0" max="100">
+    <input type="number" id="hvac_indoor_visit3" name="hvac_indoor_visit3" min="0" max="100">
+    <input type="number" id="hvac_indoor_visit4" name="hvac_indoor_visit4" min="0" max="100">
+    <input type="text" id="hvac_indoor_remark" name="hvac_indoor_remark">
+</div>
+
+<!-- Wiring and Copper pipeline laying -->
+<div class="percentage-grid">
+    <div class="label">Wiring and Copper pipeline laying</div>
+    <input type="number" id="hvac_wiring_visit1" name="hvac_wiring_visit1" min="0" max="100">
+    <input type="number" id="hvac_wiring_visit2" name="hvac_wiring_visit2" min="0" max="100">
+    <input type="number" id="hvac_wiring_visit3" name="hvac_wiring_visit3" min="0" max="100">
+    <input type="number" id="hvac_wiring_visit4" name="hvac_wiring_visit4" min="0" max="100">
+    <input type="text" id="hvac_wiring_remark" name="hvac_wiring_remark">       
+</div>
+
+<!-- Installation of Outdoor Unit -->
+<div class="percentage-grid">
+    <div class="label">Installation of Outdoor Unit</div>
+    <input type="number" id="hvac_outdoor_visit1" name="hvac_outdoor_visit1" min="0" max="100">
+    <input type="number" id="hvac_outdoor_visit2" name="hvac_outdoor_visit2" min="0" max="100">
+    <input type="number" id="hvac_outdoor_visit3" name="hvac_outdoor_visit3" min="0" max="100">
+    <input type="number" id="hvac_outdoor_visit4" name="hvac_outdoor_visit4" min="0" max="100">
+    <input type="text" id="hvac_outdoor_remark" name="hvac_outdoor_remark">
+</div>
+
+<h3 style="margin: 30px 0 20px; color: #667eea;">V. CMS</h3>
+
+<!-- Pipe Conduiting -->
+<div class="percentage-grid">
+    <div class="label">Pipe Conduiting</div>
+    <input type="number" id="cms_pipe_visit1" name="cms_pipe_visit1" min="0" max="100">
+    <input type="number" id="cms_pipe_visit2" name="cms_pipe_visit2" min="0" max="100">
+    <input type="number" id="cms_pipe_visit3" name="cms_pipe_visit3" min="0" max="100">
+    <input type="number" id="cms_pipe_visit4" name="cms_pipe_visit4" min="0" max="100">
+    <input type="text" id="cms_pipe_remark" name="cms_pipe_remark">
+</div>
+
+<!-- Wiring -->
+<div class="percentage-grid">
+    <div class="label">Wiring</div>
+    <input type="number" id="cms_wiring_visit1" name="cms_wiring_visit1" min="0" max="100">
+    <input type="number" id="cms_wiring_visit2" name="cms_wiring_visit2" min="0" max="100">
+    <input type="number" id="cms_wiring_visit3" name="cms_wiring_visit3" min="0" max="100">
+    <input type="number" id="cms_wiring_visit4" name="cms_wiring_visit4" min="0" max="100">
+    <input type="text" id="cms_wiring_remark" name="cms_wiring_remark">
+</div>
+
+<!-- Fixture Installation -->
+<div class="percentage-grid">
+    <div class="label">Fixture Installation</div>
+    <input type="number" id="cms_fixture_visit1" name="cms_fixture_visit1" min="0" max="100">
+    <input type="number" id="cms_fixture_visit2" name="cms_fixture_visit2" min="0" max="100">
+    <input type="number" id="cms_fixture_visit3" name="cms_fixture_visit3" min="0" max="100">
+    <input type="number" id="cms_fixture_visit4" name="cms_fixture_visit4" min="0" max="100">
+    <input type="text" id="cms_fixture_remark" name="cms_fixture_remark">
+</div>
+
+   <h3 style="margin: 30px 0 20px; color: #667eea;">VI. Others</h3>
+
+<div id="othersContainer"></div>
+
+<button type="button" class="btn btn-add" onclick="addOtherEntry()" style="margin-bottom: 20px;">
+    + Add Other Item
+</button>
+
+    <div class="form-grid" style="margin-top: 30px;">
+    <div class="form-group">
+        <label for="prepared_by">Prepared By</label>
+        <input type="text" id="prepared_by" name="prepared_by">
+    </div>
+    <div class="form-group">
+        <label for="checked_by">Checked By</label>
+        <input type="text" id="checked_by" name="checked_by">
+    </div>
+</div>
+
+    <div class="btn-group">
+        <button type="button" class="btn btn-secondary" onclick="prevSection(2)">
+            ← Previous
+        </button>
+        <button type="button" class="btn btn-primary" onclick="nextSection(2)">
+            Next →
+        </button>
+    </div>
+</div>
+
+                <!-- Section 3: Site Visit Photographs -->
+                <div class="section" id="section3">
+    <div class="section-header">
+        <span>📷</span>
+        <h2>Site Visit Photographs</h2>
+    </div>
+
+    <h3 style="margin: 20px 0; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">1. Work Progress</h3>
+    <div id="workProgressContainer"></div>
+    <button type="button" class="btn btn-add" onclick="addWorkEntry()">
+        + Add Work Progress Entry
+    </button>
+
+    <h3 style="margin: 40px 0 20px; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">2. Quality Observation</h3>
+    <div id="qualityContainer"></div>
+    <button type="button" class="btn btn-add" onclick="addQualityEntry()">
+        + Add Quality Observation Entry
+    </button>
+
+    <h3 style="margin: 40px 0 20px; color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 5px;">3. Make / Model Inspection</h3>
+    <div id="makeModelContainer"></div>
+    <button type="button" class="btn btn-add" onclick="addMakeModelEntry()">
+        + Add Make/Model Entry
+    </button>
+
+    <div class="btn-group" style="margin-top: 40px;">
+        <button type="button" class="btn btn-secondary" onclick="prevSection(3)">
+            ← Previous
+        </button>
+        <button type="button" class="btn btn-primary" onclick="nextSection(3)">
+            Next →
+        </button>
+    </div>
+</div>
+
+                <!-- Section 4: Quality and Critical Challenges -->
+                <div class="section" id="section4">
+                    <div class="section-header">
+                        <span>✅</span>
+                        <h2>Quality and Critical Challenges</h2>
+                    </div>
+
+                <div class="form-grid">
+    <div class="form-group">
+        <label for="quality_project_title">Project Title</label>
+        <input type="text" id="quality_project_title" name="quality_project_title" readonly style="background-color: #f0f0f0;">
+    </div>
+    <div class="form-group">
+        <label for="quality_branch_area">Branch Area</label>
+        <input type="text" id="quality_branch_area" name="quality_branch_area" readonly style="background-color: #f0f0f0;">
+    </div>
+    <div class="form-group">
+        <label for="civil_vendor">Civil Vendor</label>
+        <input type="text" id="civil_vendor" name="civil_vendor">
+    </div>
+    <div class="form-group">
+        <label for="hvac_vendor">HVAC Vendor</label>
+        <input type="text" id="hvac_vendor" name="hvac_vendor">
+    </div>
+    <div class="form-group">
+        <label for="project_start_date">Project Start Date</label>
+        <input type="date" id="project_start_date" name="project_start_date">
+    </div>
+    <div class="form-group">
+        <label for="planned_handover_date">Planned Handover Date</label>
+        <input type="date" id="planned_handover_date" name="planned_handover_date">
+    </div>
+    <div class="form-group">
+        <label for="actual_handover_date">Actual Handover Date</label>
+        <input type="date" id="actual_handover_date" name="actual_handover_date">
+    </div>
+    <div class="form-group">
+        <label for="quality_date_of_visit">Date of Visit</label>
+        <input type="date" id="quality_date_of_visit" name="quality_date_of_visit" readonly style="background-color: #f0f0f0;">
+    </div>
+</div>
+
+<h3 style="margin: 20px 0; color: #667eea;">Quality Observations</h3>
+<div class="form-grid">
+    <div class="form-group">
+        <label>Observation 1</label>
+        <textarea name="quality_observation_0"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Observation 2</label>
+        <textarea name="quality_observation_1"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Observation 3</label>
+        <textarea name="quality_observation_2"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Observation 4</label>
+        <textarea name="quality_observation_3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Observation 5</label>
+        <textarea name="quality_observation_4"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Observation 6</label>
+        <textarea name="quality_observation_5"></textarea>
+    </div>
+</div>
+
+<!-- ✅ NEW SECTION: Site Delay Reasons -->
+<h3 style="margin: 20px 0; color: #667eea;">Site Delay Reasons</h3>
+<div class="form-grid">
+    <div class="form-group">
+        <label>Delay Reason 1</label>
+        <textarea name="site_delay_reason_0"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Delay Reason 2</label>
+        <textarea name="site_delay_reason_1"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Delay Reason 3</label>
+        <textarea name="site_delay_reason_2"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Delay Reason 4</label>
+        <textarea name="site_delay_reason_3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Delay Reason 5</label>
+        <textarea name="site_delay_reason_4"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Delay Reason 6</label>
+        <textarea name="site_delay_reason_5"></textarea>
+    </div>
+</div>
+
+<h3 style="margin: 20px 0; color: #667eea;">Collaborative Challenges/Inputs</h3>
+<div class="form-grid">
+    <div class="form-group">
+        <label>Challenge 1</label>
+        <textarea name="collaborative_challenge_0"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Challenge 2</label>
+        <textarea name="collaborative_challenge_1"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Challenge 3</label>
+        <textarea name="collaborative_challenge_2"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Challenge 4</label>
+        <textarea name="collaborative_challenge_3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Challenge 5</label>
+        <textarea name="collaborative_challenge_4"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Challenge 6</label>
+        <textarea name="collaborative_challenge_5"></textarea>
+    </div>
+</div>
+
+<h3 style="margin: 20px 0; color: #667eea;">Criticalities</h3>
+<div class="form-grid">
+    <div class="form-group">
+        <label>Criticality 1</label>
+        <textarea name="criticality_0"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Criticality 2</label>
+        <textarea name="criticality_1"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Criticality 3</label>
+        <textarea name="criticality_2"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Criticality 4</label>
+        <textarea name="criticality_3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Criticality 5</label>
+        <textarea name="criticality_4"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Criticality 6</label>
+        <textarea name="criticality_5"></textarea>
+    </div>
+</div>
+
+<h3 style="margin: 20px 0; color: #667eea;">Hindrances</h3>
+<div class="form-grid">
+    <div class="form-group">
+        <label>Hindrance 1</label>
+        <textarea name="hindrance_0"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Hindrance 2</label>
+        <textarea name="hindrance_1"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Hindrance 3</label>
+        <textarea name="hindrance_2"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Hindrance 4</label>
+        <textarea name="hindrance_3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Hindrance 5</label>
+        <textarea name="hindrance_4"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Hindrance 6</label>
+        <textarea name="hindrance_5"></textarea>
+    </div>
+</div>
+
+<h3 style="margin: 20px 0; color: #667eea;">Others</h3>
+<div class="form-grid">
+    <div class="form-group">
+        <label>Other 1</label>
+        <textarea name="other_0"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Other 2</label>
+        <textarea name="other_1"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Other 3</label>
+        <textarea name="other_2"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Other 4</label>
+        <textarea name="other_3"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Other 5</label>
+        <textarea name="other_4"></textarea>
+    </div>
+    <div class="form-group">
+        <label>Other 6</label>
+        <textarea name="other_5"></textarea>
+    </div>
+</div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="prevSection(4)">
+                            ← Previous
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="generateAndDownload()">
+                            📥 Generate & Download Report
+                        </button>
+                    </div>
+                </div>
+
+                
+    <div class="section" id="section5">
+    <div class="section-header">
+        <span>📤</span>
+        <h2>Upload Final Report</h2>
+    </div>
+
+    <div id="instructionBox" style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #ffc107;">
+        <h3 style="color: #856404; margin-bottom: 10px;">📋 Verification Instructions:</h3>
+        <ol style="line-height: 2.0; color: #856404; font-size: 1.1em;">
+            <li><strong>Your report has been downloaded.</strong> Open it in Excel.</li>
+            <li><strong>Verify all details</strong> including Progress Report, Site photographs with Remarks, and Quality Observations.</li>
+            <li><strong>Make Edits:</strong> If needed, adjust text or replace photos manually in Excel.</li>
+            <li><strong>Save & Upload:</strong> Save the file (Ctrl+S) and upload the final version below.</li>
+        </ol>
+    </div>
+
+    <div style="background: white; padding: 40px; border: 3px dashed #667eea; border-radius: 15px; text-align: center;">
+        <h3 style="color: #667eea; margin-bottom: 15px;">Upload Verified Excel File</h3>
+        <input type="file" id="finalExcelUpload" accept=".xlsx,.xls" style="display: none;" onchange="handleFileSelect(this)">
+        <button type="button" class="btn btn-primary" onclick="document.getElementById('finalExcelUpload').click()" style="padding: 15px 30px;">
+            📁 Choose Final File
+        </button>
+        <div id="fileInfo" style="display: none; margin-top: 15px;">
+            <p>✅ Selected: <span id="fileName" style="font-weight:bold;"></span></p>
+        </div>
+    </div>
+
+    <div class="btn-group">
+        <button type="button" class="btn btn-secondary" onclick="goBackToEdit()">← Back to Edit</button>
+        <button type="button" class="btn btn-primary" onclick="uploadFinalReport()" id="uploadBtn" disabled style="opacity: 0.5; background: #28a745 !important;">
+    💾 Finalize & Save to Database
+</button>
+    </div>
+</div>
+            <div class="loading" id="loadingOverlay">
+                <div class="spinner"></div>
+                <p>Generating your report... Please wait</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="existingDataModal">
+        <div class="modal-content">
+            <h2>Existing Data Found</h2>
+            <p>Data already exists for this SOL ID and Visit Number.</p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="loadExistingData()">Edit Existing</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="crop-modal" id="cropModal">
+    <div class="crop-container">
+        <h3 style="text-align:center; color:#667eea; margin-bottom:15px;">Crop Image to Fit Excel</h3>
+        <div class="crop-preview-box" style="height: 400px; width: 100%; background: #333;">
+            <img id="imageToCrop" style="max-width: 100%; max-height: 100%; display: block;">
+        </div>
+        <div class="btn-group" style="justify-content:center; margin-top:20px;">
+            <button type="button" class="btn btn-secondary" onclick="closeCropper()">Cancel</button>
+            <button type="button" class="btn btn-primary" onclick="saveCrop()">✅ Save Crop</button>
+        </div>
+    </div>
+
+</div>
+
+    <script>
+        /* =========================================
+   1. GLOBAL VARIABLES & INITIALIZATION
+   ========================================= */
+let currentSection = 1;
+let otherCount = 0; // For "Others" in Step 2
+
+// New counters for Step 3 Categories
+let workCount = 0;
+let qualityCount = 0;
+let makeCount = 0;
+
+// Cropper variables
+let cropper = null;
+let currentCropType = ''; // 'work', 'qual', 'make'
+let currentCropIndex = 0;
+
+// Initialize Step 2 "Others" and Step 3 Initial Entries on Load
+document.addEventListener('DOMContentLoaded', () => {
+    // Add initial entries for Step 3 Categories
+    addWorkEntry();
+    addQualityEntry();
+    addMakeModelEntry();
+});
+
+/* =========================================
+   2. EVENT LISTENERS & BASIC INFO
+   ========================================= */
+document.getElementById('sol_id').addEventListener('input', async function() {
+    const solId = this.value;
+    
+    // Auto-fill Branch Code
+    if(solId) {
+        document.getElementById('branch_code').value = solId;
+    }
+
+    // Fetch Project Name
+    if (solId) {
+        try {
+            const response = await fetch('/get-project-name', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sol_id: solId})
+            });
+            const data = await response.json();
+            if (data.found) {
+                document.getElementById('project_name').value = data.project_name;
+            }
+        } catch (e) {
+            console.error("Error fetching project name", e);
+        }
+    }
+});
+
+/* =========================================
+   3. NAVIGATION & VALIDATION
+   ========================================= */
+async function nextSection(section) {
+    // 1. Validation Logic
+    const currentForm = document.getElementById(`section${section}`);
+    const requiredFields = currentForm.querySelectorAll('[required]');
+    let valid = true;
+
+    requiredFields.forEach(field => {
+        if (!field.value) {
+            valid = false;
+            field.style.borderColor = 'red';
+        } else {
+            field.style.borderColor = '#e0e0e0';
+        }
+    });
+
+    if (!valid) {
+        showAlert('Please fill all required fields', 'warning');
+        return;
+    }
+
+    // 2. Button State Management
+    const nextBtn = currentForm.querySelector('.btn-primary');
+    if(nextBtn) {
+        const originalText = nextBtn.innerText;
+        nextBtn.disabled = true;
+        nextBtn.innerText = "Processing...";
+        nextBtn.style.opacity = "0.7";
+        
+        // 3. Section 1 Specific Logic (Check Existing Data)
+        if (section === 1) {
+            try {
+                // Clear form logic can be placed here if you want to reset before checking
+                // clearForm(); 
+                await checkExistingData();
+            } catch (error) {
+                console.error("Error checking data:", error);
+            }
+        }
+
+        nextBtn.disabled = false;
+        nextBtn.innerText = originalText;
+        nextBtn.style.opacity = "1";
+    }
+
+    // 4. Move to Next Section
+   // 4. Move to Next Section
+document.getElementById(`section${section}`).classList.remove('active');
+document.getElementById(`section${section + 1}`).classList.add('active');
+
+// Auto-fill Branch Code when moving to section 2
+if (section === 1) {
+    const solId = document.getElementById('sol_id').value;
+    document.getElementById('branch_code').value = solId;
+}
+
+// Auto-fill Quality section when moving to section 4
+if (section === 3) {
+    autoFillQualitySection();
+}
+
+updateSteps(section + 1);
+    updateProgress((section + 1) * 20);
+    window.scrollTo(0, 0);
+}
+
+// Add this new function
+function autoFillQualitySection() {
+    // Copy Project Name to Project Title
+    const projectName = document.getElementById('project_name').value;
+    document.getElementById('quality_project_title').value = projectName;
+    
+    // Copy Branch Area from Progress Report
+    const branchArea = document.getElementById('branch_area').value;
+    document.getElementById('quality_branch_area').value = branchArea;
+    
+    // Copy Date of Visit from Progress Report
+    const dateOfVisit = document.getElementById('date_of_visit').value;
+    document.getElementById('quality_date_of_visit').value = dateOfVisit;
+}
+
+function prevSection(section) {
+    document.getElementById(`section${section}`).classList.remove('active');
+    document.getElementById(`section${section - 1}`).classList.add('active');
+    updateSteps(section - 1);
+    updateProgress((section - 1) * 20);
+    window.scrollTo(0, 0);
+}
+
+function updateSteps(activeStep) {
+    document.querySelectorAll('.step').forEach((step, index) => {
+        step.classList.remove('active', 'completed');
+        if (index + 1 < activeStep) {
+            step.classList.add('completed');
+        } else if (index + 1 === activeStep) {
+            step.classList.add('active');
+        }
+    });
+}
+
+function updateProgress(percent) {
+    document.getElementById('progressFill').style.width = percent + '%';
+}
+
+function showAlert(message, type) {
+    const alert = document.getElementById('alertBox');
+    if(alert) {
+        alert.className = `alert alert-${type} show`;
+        alert.textContent = message;
+        setTimeout(() => alert.classList.remove('show'), 5000);
+    } else {
+        alert(message);
+    }
+}
+
+/* =========================================
+   4. STEP 2 LOGIC (OTHERS SECTION)
+   ========================================= */
+function addOtherEntry() {
+    const container = document.getElementById('othersContainer');
+    const entry = document.createElement('div');
+    entry.className = 'percentage-grid';
+    entry.style.marginBottom = '15px';
+    entry.innerHTML = `
+        <input type="text" name="other_item_${otherCount}" placeholder="Enter item name" style="grid-column: span 1;">
+        <input type="number" name="other_item_${otherCount}_visit1" min="0" max="100">
+        <input type="number" name="other_item_${otherCount}_visit2" min="0" max="100">
+        <input type="number" name="other_item_${otherCount}_visit3" min="0" max="100">
+        <input type="number" name="other_item_${otherCount}_visit4" min="0" max="100">
+        <input type="text" name="other_item_${otherCount}_remark">
+    `;
+    container.appendChild(entry);
+    otherCount++;
+}
+
+/* =========================================
+   5. STEP 3 LOGIC (THE 3 CATEGORIES)
+   ========================================= */
+
+// --- 5.1 Work Progress Entry ---
+function addWorkEntry() {
+    const container = document.getElementById('workProgressContainer');
+    const entry = document.createElement('div');
+    entry.className = 'photo-entry';
+    entry.id = `work_entry_${workCount}`;
+    entry.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="color: #667eea; margin: 0;">Work Progress ${workCount + 1}</h4>
+            <button type="button" class="btn" style="background: #dc3545; color: white; padding: 8px 15px;" onclick="deleteEntry('work', ${workCount})">
+                🗑️ Delete
+            </button>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Critical Milestone</label>
+                <input type="text" name="work_milestone_${workCount}" placeholder="e.g. Partition Framework">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="work_desc_${workCount}" placeholder="e.g. Completed in Hall Area">
+            </div>
+            <div class="form-group">
+                <label>Upload & Crop Image</label>
+                <input type="file" id="work_file_${workCount}" accept="image/*" onchange="initCropper('work', ${workCount})">
+                <input type="hidden" id="work_crop_result_${workCount}" name="work_image_data_${workCount}">
+                <div id="work_file_status_${workCount}" style="display:none; color: green; font-weight:bold; margin-top:5px;">✅ Ready</div>
+            </div>
+        </div>
+        <div id="work_preview_container_${workCount}" style="display:none; margin: 10px 0; text-align:center;">
+            <img id="work_preview_${workCount}" style="max-width: 250px; border: 2px solid #667eea; border-radius:8px;">
+        </div>
+        <div class="form-group">
+            <label>Remarks</label>
+            <textarea name="work_remark_${workCount}" placeholder="Enter remarks..."></textarea>
+        </div>
+    `;
+    container.appendChild(entry);
+    workCount++;
+}
+
+// --- 5.2 Quality Observation Entry ---
+function addQualityEntry() {
+    const container = document.getElementById('qualityContainer');
+    const entry = document.createElement('div');
+    entry.className = 'photo-entry';
+    entry.id = `qual_entry_${qualityCount}`;
+    entry.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="color: #667eea; margin: 0;">Quality Observation ${qualityCount + 1}</h4>
+            <button type="button" class="btn" style="background: #dc3545; color: white; padding: 8px 15px;" onclick="deleteEntry('qual', ${qualityCount})">
+                🗑️ Delete
+            </button>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Item</label>
+                <input type="text" name="qual_item_${qualityCount}" placeholder="e.g. Paint Finish">
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="qual_desc_${qualityCount}" placeholder="e.g. Uneven surface">
+            </div>
+            <div class="form-group">
+                <label>Upload & Crop Image</label>
+                <input type="file" id="qual_file_${qualityCount}" accept="image/*" onchange="initCropper('qual', ${qualityCount})">
+                <input type="hidden" id="qual_crop_result_${qualityCount}" name="qual_image_data_${qualityCount}">
+                <div id="qual_file_status_${qualityCount}" style="display:none; color: green; font-weight:bold; margin-top:5px;">✅ Ready</div>
+            </div>
+        </div>
+        <div id="qual_preview_container_${qualityCount}" style="display:none; margin: 10px 0; text-align:center;">
+            <img id="qual_preview_${qualityCount}" style="max-width: 250px; border: 2px solid #667eea; border-radius:8px;">
+        </div>
+        <div class="form-group">
+            <label>Remarks</label>
+            <textarea name="qual_remark_${qualityCount}" placeholder="Enter remediation steps..."></textarea>
+        </div>
+    `;
+    container.appendChild(entry);
+    qualityCount++;
+}
+
+// --- 5.3 Make/Model Entry ---
+function addMakeModelEntry() {
+    const container = document.getElementById('makeModelContainer');
+    const entry = document.createElement('div');
+    entry.className = 'photo-entry';
+    entry.id = `make_entry_${makeCount}`;
+    entry.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h4 style="color: #667eea; margin: 0;">Make/Model ${makeCount + 1}</h4>
+            <button type="button" class="btn" style="background: #dc3545; color: white; padding: 8px 15px;" onclick="deleteEntry('make', ${makeCount})">
+                🗑️ Delete
+            </button>
+        </div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Item</label>
+                <input type="text" name="make_item_${makeCount}" placeholder="e.g. AC Unit">
+            </div>
+            <div class="form-group">
+                <label>Make/Model Observed</label>
+                <input type="text" name="make_observed_${makeCount}" placeholder="e.g. Voltas 1.5 Ton">
+            </div>
+            <div class="form-group">
+                <label>Upload & Crop Image</label>
+                <input type="file" id="make_file_${makeCount}" accept="image/*" onchange="initCropper('make', ${makeCount})">
+                <input type="hidden" id="make_crop_result_${makeCount}" name="make_image_data_${makeCount}">
+                <div id="make_file_status_${makeCount}" style="display:none; color: green; font-weight:bold; margin-top:5px;">✅ Ready</div>
+            </div>
+        </div>
+        <div id="make_preview_container_${makeCount}" style="display:none; margin: 10px 0; text-align:center;">
+            <img id="make_preview_${makeCount}" style="max-width: 250px; border: 2px solid #667eea; border-radius:8px;">
+        </div>
+        <div class="form-group">
+            <label>Remarks</label>
+            <textarea name="make_remark_${makeCount}" placeholder="Enter remarks..."></textarea>
+        </div>
+    `;
+    container.appendChild(entry);
+    makeCount++;
+}
+
+function deleteEntry(type, index) {
+    if (confirm('Delete this entry? This will permanently remove it.')) {
+        const entry = document.getElementById(`${type}_entry_${index}`);
+        if (entry) {
+            // Mark as deleted
+            const deletedMarker = document.createElement('input');
+            deletedMarker.type = 'hidden';
+            deletedMarker.name = `${type}_deleted_${index}`;
+            deletedMarker.value = 'true';
+            entry.appendChild(deletedMarker);
+            
+            // Hide the entry
+            entry.style.display = 'none';
+            
+            // Renumber remaining entries
+            renumberEntries(type);
+            
+            showAlert('Entry deleted', 'info');
+        }
+    }
+}
+
+/* =========================================
+   6. CROPPER LOGIC (UPDATED FOR TYPES)
+   ========================================= */
+function initCropper(type, index) {
+    currentCropType = type;
+    currentCropIndex = index;
+    const input = document.getElementById(`${type}_file_${index}`);
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('imageToCrop');
+            img.src = e.target.result;
+            
+            document.getElementById('cropModal').classList.add('show');
+            
+            // Destroy existing cropper if any
+            if (cropper) cropper.destroy();
+            
+            // Initialize new cropper
+            cropper = new Cropper(img, {
+                aspectRatio: 430 / 320, // Approx Excel cell ratio
+                viewMode: 1,
+                autoCropArea: 1
+            });
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function saveCrop() {
+    if (!cropper) return;
+    
+    // Get cropped canvas
+    const canvas = cropper.getCroppedCanvas({
+        width: 430,
+        height: 320
+    });
+    
+    const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+    
+    // Save to the specific hidden input
+    document.getElementById(`${currentCropType}_crop_result_${currentCropIndex}`).value = base64Data;
+    
+    // Update the specific preview image
+    const previewImg = document.getElementById(`${currentCropType}_preview_${currentCropIndex}`);
+    const previewContainer = document.getElementById(`${currentCropType}_preview_container_${currentCropIndex}`);
+    const statusDiv = document.getElementById(`${currentCropType}_file_status_${currentCropIndex}`);
+    
+    previewImg.src = base64Data;
+    previewContainer.style.display = 'block';
+    statusDiv.style.display = 'block';
+    
+    closeCropper();
+    showAlert('Image cropped successfully!', 'info');
+}
+
+function closeCropper() {
+    document.getElementById('cropModal').classList.remove('show');
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    // Clear file input if user cancelled so they can re-select same file if needed
+    if (currentCropType && currentCropIndex !== null) {
+        const resultVal = document.getElementById(`${currentCropType}_crop_result_${currentCropIndex}`).value;
+        if (!resultVal) {
+            document.getElementById(`${currentCropType}_file_${currentCropIndex}`).value = "";
+        }
+    }
+}
+
+/* =========================================
+   7. EXISTING DATA HANDLING
+   ========================================= */
+async function checkExistingData() {
+    const solId = document.getElementById('sol_id').value;
+    const visitNo = document.getElementById('visit_no').value;
+    
+    if (!solId || !visitNo) return;
+    
+    try {
+        // Check current visit
+        const response = await fetch('/check-existing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sol_id: solId, visit_no: visitNo })
+        });
+        const result = await response.json();
+
+        // Check/Fill Previous Visits (for progress percentages)
+        const currentVisit = parseInt(visitNo);
+        for (let v = 1; v < currentVisit; v++) {
+            const prevResponse = await fetch('/check-existing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sol_id: solId, visit_no: v.toString() })
+            });
+            const prevResult = await prevResponse.json();
+            if (prevResult.exists && prevResult.data) {
+                fillPreviousVisitData(prevResult.data, v);
+                fillPreviousOthersData(prevResult.data, v);
+            }
+        }
+
+        // Fill Current Visit
+        if (result.exists && result.data) {
+            if (confirm('Existing data found for Visit ' + visitNo + '. Load and edit?')) {
+                fillCurrentVisitData(result.data);
+                // Load Images/Entries for Step 3
+                await loadStep3Entries(result.data);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking existing data:', error);
+    }
+}
+
+function fillCurrentVisitData(data) {
+    // Fill text inputs
+    for (let key in data) {
+        const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+        if (element) {
+            element.value = data[key];
+        }
+    }
+    // Handle 'Others' for current visit
+    const count = parseInt(data.other_count) || 0;
+    document.getElementById('othersContainer').innerHTML = '';
+    otherCount = 0;
+    for(let i=0; i<count; i++) {
+        addOtherEntry();
+        // fill values...
+        document.querySelector(`input[name="other_item_${i}"]`).value = data[`other_item_${i}`] || '';
+        for(let v=1; v<=4; v++) {
+            document.querySelector(`input[name="other_item_${i}_visit${v}"]`).value = data[`other_item_${i}_visit${v}`] || '';
+        }
+        document.querySelector(`input[name="other_item_${i}_remark"]`).value = data[`other_item_${i}_remark`] || '';
+    }
+}
+
+function fillPreviousVisitData(data, visitNum) {
+    // Logic to fill previous visit columns as read-only
+    const inputs = document.querySelectorAll(`input[name$="_visit${visitNum}"]`);
+    inputs.forEach(input => {
+        const name = input.name; 
+        if (data[name]) {
+            input.value = data[name];
+            input.readOnly = true;
+            input.style.backgroundColor = '#f0f0f0';
+        }
+    });
+    // Fill prepared/checked by from Visit 1
+    if (visitNum === 1) {
+        if (data.prepared_by) document.getElementById('prepared_by').value = data.prepared_by;
+        if (data.checked_by) document.getElementById('checked_by').value = data.checked_by;
+    }
+}
+
+
+
+// Load Step 3 Entries (Refactored for 3 Categories)
+async function loadStep3Entries(data) {
+    const solId = document.getElementById('sol_id').value;
+    const visitNo = document.getElementById('visit_no').value;
+    
+    // 1. Work Progress
+    const wCount = parseInt(data.work_count) || 0;
+    document.getElementById('workProgressContainer').innerHTML = '';
+    workCount = 0;
+    for(let i=0; i<wCount; i++) {
+        addWorkEntry();
+        document.querySelector(`[name="work_milestone_${i}"]`).value = data[`work_milestone_${i}`] || '';
+        document.querySelector(`[name="work_desc_${i}"]`).value = data[`work_desc_${i}`] || '';
+        document.querySelector(`[name="work_remark_${i}"]`).value = data[`work_remark_${i}`] || '';
+    }
+
+    // 2. Quality
+    const qCount = parseInt(data.quality_count) || 0;
+    document.getElementById('qualityContainer').innerHTML = '';
+    qualityCount = 0;
+    for(let i=0; i<qCount; i++) {
+        addQualityEntry();
+        document.querySelector(`[name="qual_item_${i}"]`).value = data[`qual_item_${i}`] || '';
+        document.querySelector(`[name="qual_desc_${i}"]`).value = data[`qual_desc_${i}`] || '';
+        document.querySelector(`[name="qual_remark_${i}"]`).value = data[`qual_remark_${i}`] || '';
+    }
+
+    // 3. Make/Model
+    const mCount = parseInt(data.make_count) || 0;
+    document.getElementById('makeModelContainer').innerHTML = '';
+    makeCount = 0;
+    for(let i=0; i<mCount; i++) {
+        addMakeModelEntry();
+        document.querySelector(`[name="make_item_${i}"]`).value = data[`make_item_${i}`] || '';
+        document.querySelector(`[name="make_observed_${i}"]`).value = data[`make_observed_${i}`] || '';
+        document.querySelector(`[name="make_remark_${i}"]`).value = data[`make_remark_${i}`] || '';
+    }
+    
+    // ✅ NOW LOAD IMAGES
+    await loadImagesFromFirebase(solId, visitNo);
+}
+// Function to load images from Firebase
+async function loadImagesFromFirebase(sol_id, visit_no) {
+    const categories = [
+        { type: 'work', count: workCount },
+        { type: 'qual', count: qualityCount },
+        { type: 'make', count: makeCount }
+    ];
+    
+    for (const category of categories) {
+        for (let i = 0; i < category.count; i++) {
+            try {
+                const response = await fetch('/get-image-from-firebase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sol_id: sol_id,
+                        visit_no: visit_no,
+                        image_type: category.type,
+                        image_index: i
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.image_base64) {
+                        // Set the cropped result
+                        const cropInput = document.getElementById(`${category.type}_crop_result_${i}`);
+                        if (cropInput) {
+                            cropInput.value = `data:image/jpeg;base64,${data.image_base64}`;
+                        }
+                        
+                        // Show preview
+                        const previewImg = document.getElementById(`${category.type}_preview_${i}`);
+                        const previewContainer = document.getElementById(`${category.type}_preview_container_${i}`);
+                        const statusDiv = document.getElementById(`${category.type}_file_status_${i}`);
+                        
+                        if (previewImg && previewContainer) {
+                            previewImg.src = `data:image/jpeg;base64,${data.image_base64}`;
+                            previewContainer.style.display = 'block';
+                            if (statusDiv) statusDiv.style.display = 'block';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error loading ${category.type} image ${i}:`, error);
+            }
+        }
+    }
+}
+/* =========================================
+   8. FORM SUBMISSION (GENERATE REPORT)
+   ========================================= */
+async function generateAndDownload() {
+    // 1. Basic Validation on Step 4
+    const section4 = document.getElementById('section4');
+    const required = section4.querySelectorAll('[required]');
+    let valid = true;
+    required.forEach(el => {
+        if(!el.value) { valid = false; el.style.borderColor = 'red'; }
+    });
+    if(!valid) { showAlert("Please fill required fields", "warning"); return; }
+
+    const loader = document.getElementById('loadingOverlay');
+    if(loader) loader.classList.add('show');
+
+    // 2. Construct FormData
+    const formData = new FormData();
+    const form = document.getElementById('reportForm');
+    
+    // Add standard inputs (excluding file inputs and deleted entry markers)
+    const inputs = form.querySelectorAll('input:not([type="file"]):not([name*="_deleted_"]), select, textarea');
+    inputs.forEach(input => {
+        if (input.name) formData.append(input.name, input.value || '');
+    });
+
+    // We'll set counts after processing (to get actual counts after deletions)
+    formData.append('other_count', otherCount);
+
+    // 3. Helper to Process Categories (with delete handling)
+    async function processCategory(type, count, prefixes) {
+        let actualCount = 0; // Track actual non-deleted entries
+        
+        for (let i = 0; i < count; i++) {
+            // ✅ CHECK IF ENTRY IS DELETED
+            const isDeleted = document.querySelector(`[name="${type}_deleted_${i}"]`);
+            if (isDeleted && isDeleted.value === 'true') {
+                console.log(`Skipping deleted ${type} entry ${i}`);
+                continue; // Skip deleted entries
+            }
+            
+            // Check if entry has any data
+            const valB = document.querySelector(`[name="${type}_${prefixes.b}_${i}"]`)?.value || '';
+            const valC = document.querySelector(`[name="${type}_${prefixes.c}_${i}"]`)?.value || '';
+            const valE = document.querySelector(`[name="${type}_${prefixes.e}_${i}"]`)?.value || '';
+
+            // Only process if there's actual data
+            if (valB || valC || valE) {
+                // Use actualCount for sequential numbering (0, 1, 2...)
+                formData.append(`${type}_${prefixes.b}_${actualCount}`, valB);
+                formData.append(`${type}_${prefixes.c}_${actualCount}`, valC);
+                formData.append(`${type}_${prefixes.e}_${actualCount}`, valE);
+
+                // Image Data
+                const base64Data = document.getElementById(`${type}_crop_result_${i}`)?.value;
+                if (base64Data) {
+                    try {
+                        const res = await fetch(base64Data);
+                        const blob = await res.blob();
+                        formData.append(`${type}_image_${actualCount}`, blob, `${type}_${actualCount}.jpg`);
+                    } catch (err) {
+                        console.error(`Error processing ${type} image ${i}:`, err);
+                        // Continue processing other images even if one fails
+                    }
+                }
+                
+                actualCount++; // Increment only for non-deleted entries with data
+            }
+        }
+        
+        return actualCount; // Return the actual count of non-deleted entries
+    }
+
+    // Process Work Progress (milestone, desc, remark)
+    const actualWorkCount = await processCategory('work', workCount, { b: 'milestone', c: 'desc', e: 'remark' });
+    formData.set('work_count', actualWorkCount); // Set actual count
+    console.log(`Work Progress: ${actualWorkCount} entries`);
+    
+    // Process Quality (item, desc, remark)
+    const actualQualityCount = await processCategory('qual', qualityCount, { b: 'item', c: 'desc', e: 'remark' });
+    formData.set('quality_count', actualQualityCount);
+    console.log(`Quality: ${actualQualityCount} entries`);
+    
+    // Process Make/Model (item, observed, remark)
+    const actualMakeCount = await processCategory('make', makeCount, { b: 'item', c: 'observed', e: 'remark' });
+    formData.set('make_count', actualMakeCount);
+    console.log(`Make/Model: ${actualMakeCount} entries`);
+
+    // 4. Send to Backend
+    try {
+        const response = await fetch('/generate-report', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Draft_Report_${document.getElementById('sol_id').value}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            // Move to Section 5
+            document.getElementById('section4').classList.remove('active');
+            document.getElementById('section5').classList.add('active');
+            updateSteps(5); 
+            window.scrollTo(0, 0);
+        } else {
+            const text = await response.text();
+            alert('Error: ' + text);
+        }
+    } catch (error) {
+        alert('Network Error: ' + error.message);
+    } finally {
+        if(loader) loader.classList.remove('show');
+    }
+}
+
+function renumberEntries(type) {
+    const container = type === 'work' ? 'workProgressContainer' : 
+                      type === 'qual' ? 'qualityContainer' : 'makeModelContainer';
+    
+    const entries = document.getElementById(container).querySelectorAll('.photo-entry');
+    let visibleIndex = 1;
+    
+    entries.forEach(entry => {
+        if (entry.style.display !== 'none') {
+            const header = entry.querySelector('h4');
+            if (header) {
+                if (type === 'work') header.textContent = `Work Progress ${visibleIndex}`;
+                else if (type === 'qual') header.textContent = `Quality Observation ${visibleIndex}`;
+                else header.textContent = `Make/Model ${visibleIndex}`;
+            }
+            visibleIndex++;
+        }
+    });
+}
+
+/* =========================================
+   9. FINAL UPLOAD LOGIC (STEP 5)
+   ========================================= */
+function handleFileSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileInfo').style.display = 'block';
+        
+        const btn = document.getElementById('uploadBtn');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.background = '#28a745';
+    }
+}
+
+async function uploadFinalReport() {
+    const file = document.getElementById('finalExcelUpload').files[0];
+    if (!file) return alert("Please select a file");
+    if(!confirm("Upload this as the FINAL report?")) return;
+
+    document.getElementById('loadingOverlay').classList.add('show');
+    
+    const formData = new FormData();
+    formData.append('excel_file', file);
+    formData.append('sol_id', document.getElementById('sol_id').value);
+    formData.append('visit_no', document.getElementById('visit_no').value);
+    formData.append('project_name', document.getElementById('project_name').value);
+
+    try {
+        const res = await fetch('/upload-final-report', {method: 'POST', body: formData});
+        if(res.ok) {
+            document.getElementById('loadingOverlay').classList.remove('show');
+            // Render Success Message
+            document.getElementById('section5').innerHTML = `
+                <div class="section-header">
+                    <span>✅</span><h2>Report Saved Successfully!</h2>
+                </div>
+                <div style="text-align: center; padding: 60px; background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); border-radius: 15px;">
+                    <div style="font-size: 5em; margin-bottom: 20px;">🎉</div>
+                    <h2 style="color: #155724;">Report Uploaded to Database!</h2>
+                    <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">
+                        ➕ Create Another Report
+                    </button>
+                </div>
+            `;
+            window.scrollTo(0, 0);
+        } else {
+            alert("Error: " + await res.text());
+        }
+    } catch(e) {
+        alert("Error: " + e.message);
+    } finally {
+        if(document.getElementById('loadingOverlay')) {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+    }
+}
+
+function goBackToEdit() {
+    if (confirm('Going back will require you to regenerate the report. Continue?')) {
+        document.getElementById('section5').classList.remove('active');
+        document.getElementById('section4').classList.add('active');
+        updateSteps(4);
+        window.scrollTo(0, 0);
+    }
+}
+
+function clearForm() {
+    // Reset standard inputs
+    const inputs = document.querySelectorAll('input:not(#sol_id):not(#project_name):not(#visit_no), textarea');
+    inputs.forEach(i => i.value = '');
+    
+    // Reset specific containers
+    document.getElementById('workProgressContainer').innerHTML = ''; workCount = 0;
+    document.getElementById('qualityContainer').innerHTML = ''; qualityCount = 0;
+    document.getElementById('makeModelContainer').innerHTML = ''; makeCount = 0;
+    
+    // Add initial empty rows
+    addWorkEntry();
+    addQualityEntry();
+    addMakeModelEntry();
+}
+    </script>
+</body>
+</html>
