@@ -1265,8 +1265,11 @@ def update_visit_percentages(sol_id, current_visit, data):
 @app.route('/generate-report', methods=['POST'])
 def generate_report():
     try:
-        print("📥 Starting report generation...")
+        print("=" * 50)
+        print("📥 STARTING REPORT GENERATION")
+        print("=" * 50)
         
+        # 1. Get form data
         form_data = request.form.to_dict()
         files = request.files
         
@@ -1274,52 +1277,95 @@ def generate_report():
         visit_no = form_data.get('visit_no')
         project_name = form_data.get('project_name')
         
+        print(f"📋 SOL ID: {sol_id}")
+        print(f"📋 Visit: {visit_no}")
+        print(f"📋 Project: {project_name}")
+        
         if not sol_id or not visit_no or not project_name:
-            return jsonify({'error': 'Missing required fields'}), 400
+            print("❌ Missing required fields")
+            return jsonify({'error': 'Missing required fields (SOL ID, Visit No, or Project Name)'}), 400
 
-        print(f"📊 Saving images for SOL: {sol_id}, Visit: {visit_no}")
-        save_images_to_firebase(sol_id, visit_no, form_data, files)
+        # 2. Count images
+        work_count = int(form_data.get('work_count', 0))
+        quality_count = int(form_data.get('quality_count', 0))
+        make_count = int(form_data.get('make_count', 0))
         
+        print(f"📸 Images: Work={work_count}, Quality={quality_count}, Make={make_count}")
+        
+        # ✅ SKIP FIREBASE UPLOAD FOR NOW (to test if this is the issue)
+        # save_images_to_firebase(sol_id, visit_no, form_data, files)
+        
+        # 3. Load template
         print("📄 Loading Excel template...")
+        if not os.path.exists(TEMPLATE_PATH):
+            print(f"❌ Template not found at: {TEMPLATE_PATH}")
+            return jsonify({'error': 'Excel template not found'}), 500
+            
         wb = openpyxl.load_workbook(TEMPLATE_PATH)
+        print("✅ Template loaded")
         
+        # 4. Fill sheets
         print("✍️ Filling Progress Report...")
         fill_progress_report(wb, form_data)
+        print("✅ Progress Report done")
         
         print("📸 Filling Photographs Sheet...")
         fill_photographs_sheet(wb, form_data, files, sol_id, visit_no)
+        print("✅ Photographs done")
         
         print("✅ Filling Quality Sheet...")
         fill_quality_sheet(wb, form_data)
+        print("✅ Quality Sheet done")
         
-        print("💾 Saving to memory...")
+        # 5. Save to memory
+        print("💾 Saving Excel to memory...")
         excel_buffer = io.BytesIO()
         wb.save(excel_buffer)
         excel_buffer.seek(0)
+        print("✅ Excel saved to buffer")
         
-        # Save Draft Data JSON
-        print("☁️ Uploading to Firebase...")
-        blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json"
-        bucket.blob(blob_path).upload_from_string(json.dumps(form_data), content_type='application/json')
+        # 6. Save JSON to Firebase
+        print("☁️ Saving JSON to Firebase...")
+        try:
+            blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json"
+            bucket.blob(blob_path).upload_from_string(json.dumps(form_data), content_type='application/json')
+            print("✅ JSON saved to Firebase")
+        except Exception as fb_error:
+            print(f"⚠️ Firebase JSON upload failed: {fb_error}")
+            # Continue anyway - don't fail the whole request
         
-        print("✅ Report generation complete!")
-        
-        # ✅ Clean up workbook
+        # 7. Cleanup
         wb.close()
-        del wb
-        gc.collect()
+        print("✅ Workbook closed")
         
+        print("=" * 50)
+        print("✅ REPORT GENERATION COMPLETE")
+        print("=" * 50)
+        
+        # 8. Return file
         return send_file(
             excel_buffer,
             as_attachment=True,
             download_name=f"{project_name}_Visit_{visit_no}_Draft.xlsx",
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
+        
     except Exception as e:
-        print(f"❌ Generate report error: {str(e)}")
+        print("=" * 50)
+        print("❌ CRITICAL ERROR IN GENERATE-REPORT")
+        print("=" * 50)
+        print(f"Error Type: {type(e).__name__}")
+        print(f"Error Message: {str(e)}")
+        
         import traceback
-        traceback.print_exc()
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
+        print("Full Traceback:")
+        print(traceback.format_exc())
+        print("=" * 50)
+        
+        return jsonify({
+            'error': f'Server error: {str(e)}',
+            'type': type(e).__name__
+        }), 500
 
 @app.route('/upload-final-report', methods=['POST'])
 def upload_final_report():
