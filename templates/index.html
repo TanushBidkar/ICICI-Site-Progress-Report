@@ -1302,7 +1302,36 @@ let isReviewer = false;
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     
-    // ✅ METHOD 1: Try session ID first (works cross-domain via Firebase)
+    // ✅ FIX: Try localStorage FIRST (fastest method)
+    const storedEmail = localStorage.getItem('currentUser');
+    const storedName = localStorage.getItem('userName');
+    
+    if (storedEmail) {
+        currentUserEmail = storedEmail;
+        currentUserName = storedName || '';
+        console.log('✅ Email loaded from localStorage:', storedEmail);
+        
+        // Auto-detect region for reviewers
+        for (const region in REGION_REVIEWERS) {
+            if (REGION_REVIEWERS[region].some(r => r.email === currentUserEmail)) {
+                currentRegion = region;
+                isReviewer = true;
+                console.log('✅ Reviewer detected for region:', region);
+                break;
+            }
+        }
+        
+        const savedRegion = localStorage.getItem('currentRegion');
+        if (savedRegion && !currentRegion) {
+            currentRegion = savedRegion;
+        }
+        
+        // Initialize page
+        initializePage();
+        return; // ✅ Exit early if localStorage worked
+    }
+    
+    // ✅ METHOD 2: Try session ID from URL (cross-domain via Firebase)
     const sessionId = urlParams.get('session') || localStorage.getItem('sessionId');
     
     if (sessionId) {
@@ -1322,116 +1351,76 @@ document.addEventListener('DOMContentLoaded', async () => {
                     currentUserEmail = sessionData.email;
                     currentUserName = sessionData.name;
                     
-                    // Save to localStorage
                     localStorage.setItem('currentUser', sessionData.email);
                     localStorage.setItem('userName', sessionData.name);
                     localStorage.setItem('sessionId', sessionId);
                     
                     console.log('✅ Session loaded successfully:', currentUserEmail);
-                    
-                    // Clean URL
                     window.history.replaceState({}, document.title, window.location.pathname);
-                } else {
-                    console.warn('⚠️ Session validation failed');
-                    tryEmailFromURL();
+                    
+                    initializePage();
+                    return;
                 }
-            } else {
-                console.error('❌ Session fetch failed');
-                tryEmailFromURL();
             }
         } catch (error) {
             console.error('❌ Error fetching session:', error);
-            tryEmailFromURL();
         }
-    } else {
-        // No session ID, try other methods
-        tryEmailFromURL();
     }
     
-    // Helper function to try email from URL
-    function tryEmailFromURL() {
-        // ✅ METHOD 2: Try email from URL parameter
-        const emailFromURL = urlParams.get('email');
-        const nameFromURL = urlParams.get('name');
+    // ✅ METHOD 3: Try email from URL parameter
+    const emailFromURL = urlParams.get('email');
+    const nameFromURL = urlParams.get('name');
+    
+    if (emailFromURL) {
+        currentUserEmail = emailFromURL;
+        currentUserName = nameFromURL || '';
         
-        if (emailFromURL) {
-            currentUserEmail = emailFromURL;
-            currentUserName = nameFromURL || '';
-            
-            localStorage.setItem('currentUser', emailFromURL);
-            localStorage.setItem('userName', nameFromURL || '');
-            
-            console.log('✅ Email loaded from URL:', emailFromURL);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-            // ✅ METHOD 3: Try localStorage (same domain only)
-            const storedEmail = localStorage.getItem('currentUser');
-            const storedName = localStorage.getItem('userName');
-            
-            if (storedEmail) {
-                currentUserEmail = storedEmail;
-                currentUserName = storedName || '';
-                console.log('✅ Email loaded from localStorage:', storedEmail);
-            } else {
-                console.log('⚠️ No user email found');
-            }
-        }
+        localStorage.setItem('currentUser', emailFromURL);
+        localStorage.setItem('userName', nameFromURL || '');
+        
+        console.log('✅ Email loaded from URL:', emailFromURL);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        initializePage();
+        return;
     }
     
-    // Auto-detect region for reviewers (after email is loaded)
+    // ✅ NO USER FOUND - Show helpful message
+    console.log('⚠️ No user credentials found. User needs to login.');
+    initializePage(); // Still initialize the page
+});
+
+// ✅ NEW: Separate initialization function
+function initializePage() {
+    // Auto-detect region for reviewers
     if (currentUserEmail) {
         for (const region in REGION_REVIEWERS) {
             if (REGION_REVIEWERS[region].some(r => r.email === currentUserEmail)) {
                 currentRegion = region;
                 isReviewer = true;
-                console.log('✅ Reviewer detected for region:', region);
                 break;
             }
         }
     }
-     const savedRegion = localStorage.getItem('currentRegion');
-    if (savedRegion) {
+    
+    const savedRegion = localStorage.getItem('currentRegion');
+    if (savedRegion && !currentRegion) {
         currentRegion = savedRegion;
     }
+    
     // Initialize default entries
     addWorkEntry();
     addQualityEntry();
     addMakeModelEntry();
     
     // Check if redirected to reviews
+    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'reviews') {
         showReviewDashboard();
     }
-});
-
-// ✅ NEW FUNCTION: Automatically detect logged-in user
-async function autoDetectCurrentUser() {
-    try {
-        const userEmail = localStorage.getItem('currentUser');
-        const userName = localStorage.getItem('userName');
-        
-        if (userEmail) {
-            currentUserEmail = userEmail;
-            currentUserName = userName || '';
-            
-            console.log('✅ Auto-detected user:', currentUserEmail);
-            
-            // Auto-detect region for reviewers
-            for (const region in REGION_REVIEWERS) {
-                if (REGION_REVIEWERS[region].some(r => r.email === userEmail)) {
-                    currentRegion = region;
-                    isReviewer = true;
-                    console.log('✅ Reviewer detected for region:', region);
-                    break;
-                }
-            }
-        } else {
-            console.log('⚠️ No user email found in localStorage');
-        }
-    } catch (error) {
-        console.error('Error auto-detecting user:', error);
-    }
 }
+// ✅ NEW FUNCTION: Automatically detect logged-in user
+
 /* =========================================
    EVENT LISTENERS & BASIC INFO
    ========================================= */
@@ -3153,21 +3142,170 @@ function logoutFromReviewDashboard() {
 }
 
 function changeUserLogin() {
-    if (confirm('Are you sure you want to logout and change user?')) {
-        // Clear stored credentials
+    if (confirm('Are you sure you want to logout?')) {
+        // Show registration/login modal
+        const modalHTML = `
+            <div id="authModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
+                    <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">Login or Register</h2>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button id="loginTab" class="btn btn-primary" style="flex: 1;" onclick="showLoginForm()">Login</button>
+                        <button id="registerTab" class="btn btn-secondary" style="flex: 1;" onclick="showRegisterForm()">Register</button>
+                    </div>
+                    
+                    <!-- Login Form -->
+                    <div id="loginForm">
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
+                            <input type="email" id="loginEmail" placeholder="your.email@company.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
+                            <input type="password" id="loginPassword" placeholder="Enter password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        </div>
+                        
+                        <div id="loginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px;"></div>
+                        
+                        <button class="btn btn-primary" onclick="submitLogin()" style="width: 100%;">Login</button>
+                    </div>
+                    
+                    <!-- Registration Form -->
+                    <div id="registerForm" style="display: none;">
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Full Name *</label>
+                            <input type="text" id="registerName" placeholder="Your Full Name" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
+                            <input type="email" id="registerEmail" placeholder="your.email@company.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
+                            <input type="password" id="registerPassword" placeholder="Create password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                        </div>
+                        
+                        <div id="registerError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px;"></div>
+                        
+                        <button class="btn btn-primary" onclick="submitRegister()" style="width: 100%;">Register</button>
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="closeAuthModal()" style="width: 100%; margin-top: 15px;">Cancel</button>
+                </div>
+            </div>
+        `;
+        
+        // Clear old data
         localStorage.removeItem('currentUser');
         localStorage.removeItem('userName');
         localStorage.removeItem('sessionId');
-        
-        // Clear form fields
-        document.getElementById('user_email_input').value = '';
-        document.getElementById('user_name_input').value = '';
-        
-        // Reset global variables
         currentUserEmail = '';
         currentUserName = '';
         
-        alert('Logged out successfully. You can now enter new credentials.');
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+}
+function showLoginForm() {
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('loginTab').className = 'btn btn-primary';
+    document.getElementById('registerTab').className = 'btn btn-secondary';
+}
+
+function showRegisterForm() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('loginTab').className = 'btn btn-secondary';
+    document.getElementById('registerTab').className = 'btn btn-primary';
+}
+
+function closeAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.remove();
+}
+
+async function submitLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const errorDiv = document.getElementById('loginError');
+    
+    if (!email || !password) {
+        errorDiv.textContent = 'Please enter both email and password';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/verify-user-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentUserEmail = result.email;
+            currentUserName = result.name;
+            localStorage.setItem('currentUser', result.email);
+            localStorage.setItem('userName', result.name);
+            
+            closeAuthModal();
+            document.getElementById('user_email_input').value = result.email;
+            document.getElementById('user_name_input').value = result.name;
+            
+            alert('✅ Login successful!');
+        } else {
+            errorDiv.textContent = result.error || 'Login failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Server error. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+}
+
+async function submitRegister() {
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value.trim();
+    const errorDiv = document.getElementById('registerError');
+    
+    if (!name || !email || !password) {
+        errorDiv.textContent = 'Please fill all fields';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    if (password.length < 6) {
+        errorDiv.textContent = 'Password must be at least 6 characters';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/register-user', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password, name })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Registration successful! You can now login.');
+            showLoginForm();
+            document.getElementById('loginEmail').value = email;
+        } else {
+            errorDiv.textContent = result.error || 'Registration failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Server error. Please try again.';
+        errorDiv.style.display = 'block';
     }
 }
 
