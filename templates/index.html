@@ -1150,14 +1150,20 @@
 
         <div class="form-group">
     <label for="user_email_input">Your Email *</label>
-    <input type="email" id="user_email_input" required placeholder="your.email@company.com">
+    <input type="email" id="user_email_input" required placeholder="your.email@company.com" value="">
 </div>
 
 <div class="form-group">
     <label for="user_name_input">Your Name *</label>
-    <input type="text" id="user_name_input" required placeholder="Your Full Name">
+    <input type="text" id="user_name_input" required placeholder="Your Full Name" value="">
 </div>
 
+
+<div class="form-group" style="grid-column: 1 / -1; text-align: center; margin: 20px 0;">
+    <button type="button" class="btn" style="background: #dc3545; color: white;" onclick="changeUserLogin()">
+        🔄 Change User / Logout
+    </button>
+</div>
         <div class="form-group">
             <label for="sol_id_confirm">SOL ID *</label>
             <input type="text" id="sol_id_confirm" required readonly style="background-color: #f0f0f0;">
@@ -1216,12 +1222,13 @@
         <h3 style="color: #667eea;">Your Approved Reports Count: <span id="userApprovedCount" style="font-size: 2em; color: #28a745;">0</span></h3>
     </div>
 
-    <div style="display: flex; gap: 20px; margin-bottom: 30px;">
-        <button class="btn btn-primary" onclick="showPendingReviews()">📋 Pending Reviews</button>
-        <button class="btn" style="background: #28a745; color: white;" onclick="showCompletedReviews()">✅ Completed Reviews</button>
-        <button class="btn btn-secondary" onclick="showAllApprovedReports()">📁 All Approved Reports</button>
-        <button class="btn" style="background: #6c757d; color: white;" onclick="goBackToHome()">🏠 New Report</button>
-    </div>
+    <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
+    <button class="btn btn-primary" onclick="showPendingReviews()">📋 Pending Reviews</button>
+    <button class="btn" style="background: #28a745; color: white;" onclick="showCompletedReviews()">✅ Completed Reviews</button>
+    <button class="btn btn-secondary" onclick="showAllApprovedReports()">📁 All Approved Reports</button>
+    <button class="btn" style="background: #6c757d; color: white;" onclick="goBackToHome()">🏠 New Report</button>
+    <button class="btn" style="background: #dc3545; color: white;" onclick="logoutFromReviewDashboard()">🔄 Change User / Logout</button>
+</div>
 
     <div id="reviewsContainer" style="min-height: 400px;">
         <!-- Reviews will be loaded here -->
@@ -1382,7 +1389,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     }
-    
+     const savedRegion = localStorage.getItem('currentRegion');
+    if (savedRegion) {
+        currentRegion = savedRegion;
+    }
     // Initialize default entries
     addWorkEntry();
     addQualityEntry();
@@ -1501,8 +1511,23 @@ async function nextSection(section) {
 
     if (section === 3) {
         autoFillQualitySection();
+        
+        // Auto-fill email and name but allow editing
+    if (currentUserEmail) {
         document.getElementById('user_email_input').value = currentUserEmail;
+    }
+    if (currentUserName) {
         document.getElementById('user_name_input').value = currentUserName;
+    }
+    document.getElementById('user_email_input').addEventListener('change', function() {
+        currentUserEmail = this.value.trim();
+        localStorage.setItem('currentUser', currentUserEmail);
+    });
+    
+    document.getElementById('user_name_input').addEventListener('change', function() {
+        currentUserName = this.value.trim();
+        localStorage.setItem('userName', currentUserName);
+    });
     }
 
     updateSteps(section + 1);
@@ -2077,6 +2102,8 @@ async function loadReviewers() {
         reviewerSelect.innerHTML = '<option value="">First select a region</option>';
         return;
     }
+     currentRegion = region;
+    localStorage.setItem('currentRegion', region);
     
     try {
         const response = await fetch('/get-reviewers', {
@@ -2652,26 +2679,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ✅ Function to open the Login Modal
     function openReviewsFromHome() {
-        console.log('🔍 Opening reviews dashboard...');
-        
-        if (currentUserEmail) {
-            console.log('✅ User already logged in');
-            showReviewDashboard();
-            return;
-        }
-        
-        // Show the Login Modal
-        const modalHTML = `
+    const modalHTML = `
         <div id="reviewOptionsModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
             <div style="background: white; border-radius: 15px; padding: 40px; max-width: 500px; width: 90%; text-align: center;">
                 <h2 style="color: #667eea; margin-bottom: 30px;">📊 Site Progress Report Options</h2>
                 
-                <button class="btn btn-primary" onclick="openUploadForReview()" style="width: 100%; margin-bottom: 20px; padding: 20px; font-size: 1.2em;">
+                <button class="btn btn-primary" onclick="showUploadForReview()" style="width: 100%; margin-bottom: 20px; padding: 20px; font-size: 1.2em;">
                     📤 Upload for Review
                 </button>
                 
-                <button class="btn" style="background: #28a745; color: white; width: 100%; padding: 20px; font-size: 1.2em;" onclick="openReviewDashboardLogin()">
-                    📋 Check Review Status
+                <button class="btn" style="background: #28a745; color: white; width: 100%; padding: 20px; font-size: 1.2em;" onclick="showReviewerDashboard()">
+                    📋 Review & Check Status
                 </button>
                 
                 <button class="btn btn-secondary" onclick="closeReviewOptionsModal()" style="width: 100%; margin-top: 20px;">
@@ -2686,6 +2704,44 @@ document.addEventListener('DOMContentLoaded', function() {
 function closeReviewOptionsModal() {
     const modal = document.getElementById('reviewOptionsModal');
     if (modal) modal.remove();
+}
+
+function showUploadForReview() {
+    closeReviewOptionsModal();
+    
+    // Go to Section 5 (Upload for Review)
+    for (let i = 1; i <= 6; i++) {
+        document.getElementById(`section${i}`).classList.remove('active');
+    }
+    document.getElementById('section5').classList.add('active');
+    updateSteps(5);
+    
+    // Auto-fill email and name if available
+    const emailInput = document.getElementById('user_email_input');
+    const nameInput = document.getElementById('user_name_input');
+    const regionSelect = document.getElementById('region_select');
+    
+    if (currentUserEmail) {
+        emailInput.value = currentUserEmail;
+    }
+    if (currentUserName) {
+        nameInput.value = currentUserName;
+    }
+    
+    // ✅ NEW: Pre-fill region if previously selected
+    const savedRegion = localStorage.getItem('currentRegion');
+    if (savedRegion) {
+        regionSelect.value = savedRegion;
+        // Trigger reviewer loading
+        loadReviewers();
+    }
+    
+    window.scrollTo(0, 0);
+}
+
+function showReviewerDashboard() {
+    closeReviewOptionsModal();
+    showReviewDashboard(); // This already exists in your code
 }
 
 function openUploadForReview() {
@@ -3069,6 +3125,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function logoutFromReviewDashboard() {
+    if (confirm('Are you sure you want to logout and change user?')) {
+        // Clear stored credentials
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('sessionId');
+        
+        // Reset global variables
+        currentUserEmail = '';
+        currentUserName = '';
+        currentRegion = '';
+        isReviewer = false;
+        
+        // Go back to home page
+        for (let i = 1; i <= 6; i++) {
+            document.getElementById(`section${i}`).classList.remove('active');
+        }
+        document.getElementById('section1').classList.add('active');
+        updateSteps(1);
+        updateProgress(25);
+        
+        alert('✅ Logged out successfully. You can now login with different credentials.');
+        window.scrollTo(0, 0);
+    }
+}
+
+function changeUserLogin() {
+    if (confirm('Are you sure you want to logout and change user?')) {
+        // Clear stored credentials
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('sessionId');
+        
+        // Clear form fields
+        document.getElementById('user_email_input').value = '';
+        document.getElementById('user_name_input').value = '';
+        
+        // Reset global variables
+        currentUserEmail = '';
+        currentUserName = '';
+        
+        alert('Logged out successfully. You can now enter new credentials.');
+    }
+}
 
     </script>
 </body>
