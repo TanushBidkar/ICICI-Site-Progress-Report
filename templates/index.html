@@ -2647,44 +2647,9 @@ function openReviewsFromHome() {
         return;
     }
     
-    // ✅ If NOT logged in, show modal
-    console.log('⚠️ No user detected, showing login modal');
-    
-    const modalHTML = `
-        <div id="reviewAccessModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%;">
-                <h2 style="color: #667eea; margin-bottom: 20px;">Access Review Dashboard</h2>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Your Email *</label>
-                    <input type="email" id="accessEmail" placeholder="your.email@company.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;" oninput="checkReviewerStatus()">
-                </div>
-                
-                <div id="regionSelectionDiv" style="margin-bottom: 20px; display: none;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Select Region *</label>
-                    <select id="accessRegion" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;" onchange="enableAccessButton()">
-                        <option value="">Choose Region</option>
-                        <option value="West">West</option>
-                        <option value="East">East</option>
-                        <option value="South">South</option>
-                        <option value="North">North</option>
-                    </select>
-                </div>
-                
-                <div id="reviewerInfo" style="display: none; background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <p style="color: #2e7d32; font-weight: bold; margin: 0;">✅ Reviewer Detected</p>
-                    <p style="color: #2e7d32; margin: 5px 0 0 0;">Region: <strong id="detectedRegion"></strong></p>
-                </div>
-                
-                <div style="display: flex; gap: 15px; justify-content: flex-end;">
-                    <button class="btn btn-secondary" onclick="closeReviewAccessModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="accessReviewDashboard()" id="accessDashboardBtn" disabled style="opacity: 0.5;">Access</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    // ✅ If NOT logged in, redirect to login page with return URL
+    console.log('⚠️ No user detected, redirecting to login');
+    window.location.href = 'https://cushman-wakefield.onrender.com/login.html?redirect=https://icici-site-progress-report.onrender.com/?view=reviews';
 }
 
 // ✅ NEW FUNCTION - This is what makes reviewers skip region selection
