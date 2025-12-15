@@ -43,6 +43,28 @@ if not firebase_admin._apps:
     })
 
 bucket = storage.bucket()
+# Region-wise reviewers configuration
+REGION_REVIEWERS = {
+    'West': [
+        {'email': 'richarddsilva@company.com', 'name': 'Richard Dsilva'},
+        {'email': 'abhaypatwa@company.com', 'name': 'Abhay Patwa'},
+        {'email': 'niwantghadge@company.com', 'name': 'Niwant Ghadge'},
+        {'email': 'chaman.gotya@cushwake.com', 'name': 'Chaman Gotya'}
+    ],
+    'East': [
+        {'email': 'subhomoybhakat@company.com', 'name': 'Subhomoy Bhakat'},
+        {'email': 'dipayansutar@company.com', 'name': 'Dipayan Sutar'},
+        {'email': 'souryabratachatterjee@company.com', 'name': 'Sourya Chatterjee'}
+    ],
+    'South': [
+        {'email': 'adhithyaram@company.com', 'name': 'Adithyaraman Natarajan'},
+        {'email': 'arjunkumarm@company.com', 'name': 'Arjun Kumar M'}
+    ],
+    'North': [
+        {'email': 'marufkhan@company.com', 'name': 'Maruf Khan'},
+        {'email': 'amandeepmaurya@company.com', 'name': 'Amandeep Mourya'}
+    ]
+}
 
 # Template path
 TEMPLATE_PATH = 'templates/excel_template.xlsx'
@@ -1256,21 +1278,12 @@ def update_visit_percentages(sol_id, current_visit, data):
 @app.route('/generate-report', methods=['POST'])
 def generate_report():
     try:
-        print("=" * 50)
-        print("📥 STARTING REPORT GENERATION")
-        print("=" * 50)
-        
-        # 1-4. [Keep your existing code]
         form_data = request.form.to_dict()
         files = request.files
         
         sol_id = form_data.get('sol_id')
         visit_no = form_data.get('visit_no')
         project_name = form_data.get('project_name')
-        
-        print(f"📋 SOL ID: {sol_id}")
-        print(f"📋 Visit: {visit_no}")
-        print(f"📋 Project: {project_name}")
         
         if not sol_id or not visit_no or not project_name:
             return jsonify({'error': 'Missing required fields'}), 400
@@ -1279,57 +1292,29 @@ def generate_report():
         quality_count = int(form_data.get('quality_count', 0))
         make_count = int(form_data.get('make_count', 0))
         
-        print(f"📸 Images: Work={work_count}, Quality={quality_count}, Make={make_count}")
-        
-        # 3. Load template
-        print("📄 Loading Excel template...")
-        if not os.path.exists(TEMPLATE_PATH):
-            return jsonify({'error': 'Excel template not found'}), 500
-            
         wb = openpyxl.load_workbook(TEMPLATE_PATH)
-        print("✅ Template loaded")
         
-        # 4. Fill sheets
-        print("✍️ Filling Progress Report...")
         fill_progress_report(wb, form_data)
-        print("✅ Progress Report done")
-        
-        print("📸 Filling Photographs Sheet...")
         fill_photographs_sheet(wb, form_data, files, sol_id, visit_no)
-        print("✅ Photographs done")
-        
-        print("✅ Filling Quality Sheet...")
         fill_quality_sheet(wb, form_data)
-        print("✅ Quality Sheet done")
         
-        # 5. Save to memory
-        print("💾 Saving Excel to memory...")
         excel_buffer = io.BytesIO()
-        wb.save(excel_buffer)  # ✅ This will now work
+        wb.save(excel_buffer)
         excel_buffer.seek(0)
-        print("✅ Excel saved to buffer")
-        
-        # ✅ NOW close the workbook AFTER saving
         wb.close()
-        print("✅ Workbook closed")
         
-        # 6. Save JSON to Firebase
-        print("☁️ Saving JSON to Firebase...")
-        try:
-            blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json"
-            bucket.blob(blob_path).upload_from_string(json.dumps(form_data), content_type='application/json')
-            print("✅ JSON saved to Firebase")
-        except Exception as fb_error:
-            print(f"⚠️ Firebase JSON upload failed: {fb_error}")
+        # Save to temporary storage (not final location)
+        temp_blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/draft.xlsx"
+        temp_blob = bucket.blob(temp_blob_path)
+        temp_blob.upload_from_file(excel_buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         
-        # 7. Cleanup memory
+        # Save JSON temporarily
+        json_blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/data.json"
+        bucket.blob(json_blob_path).upload_from_string(json.dumps(form_data), content_type='application/json')
+        
         gc.collect()
         
-        print("=" * 50)
-        print("✅ REPORT GENERATION COMPLETE")
-        print("=" * 50)
-        
-        # 8. Return file
+        excel_buffer.seek(0)
         return send_file(
             excel_buffer,
             as_attachment=True,
@@ -1338,78 +1323,338 @@ def generate_report():
         )
         
     except Exception as e:
-        print("=" * 50)
-        print("❌ CRITICAL ERROR IN GENERATE-REPORT")
-        print("=" * 50)
-        print(f"Error Type: {type(e).__name__}")
-        print(f"Error Message: {str(e)}")
-        
-        import traceback
-        print("Full Traceback:")
-        print(traceback.format_exc())
-        print("=" * 50)
-        
-        return jsonify({
-            'error': f'Server error: {str(e)}',
-            'type': type(e).__name__
-        }), 500
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@app.route('/upload-final-report', methods=['POST'])
-def upload_final_report():
-    """Upload user's completed Excel file with photos to Firebase"""
+@app.route('/get-reviewers', methods=['POST'])
+def get_reviewers():
+    data = request.json
+    region = data.get('region')
+    if region in REGION_REVIEWERS:
+        return jsonify({'reviewers': REGION_REVIEWERS[region]})
+    return jsonify({'error': 'Invalid region'}), 400
+
+@app.route('/submit-for-review', methods=['POST'])
+def submit_for_review():
     try:
-        if 'excel_file' not in request.files:
-            return jsonify({'error': 'No file uploaded'}), 400
-        
-        excel_file = request.files['excel_file']
+        file = request.files['excel_file']
         sol_id = request.form.get('sol_id')
         visit_no = request.form.get('visit_no')
-        project_name = request.form.get('project_name')
-        form_data_json = request.form.get('form_data_json')
+        region = request.form.get('region')
+        reviewer_email = request.form.get('reviewer_email')
+        user_email = request.form.get('user_email')
+        user_name = request.form.get('user_name')
+        custom_filename = request.form.get('custom_filename', '').strip()
+        user_comments = request.form.get('user_comments', '').strip()  # ✅ NEW
         
-        if not excel_file or not sol_id or not visit_no:
+        if not all([sol_id, visit_no, region, reviewer_email, user_email]):
             return jsonify({'error': 'Missing required data'}), 400
         
-        # Read the uploaded Excel file
+        import uuid
+        session_id = str(uuid.uuid4())[:8]
+        
         excel_buffer = io.BytesIO()
-        excel_file.save(excel_buffer)
+        file.save(excel_buffer)
         excel_buffer.seek(0)
         
-        # Upload Excel to Firebase
-        report_blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/report_final.xlsx"
-        report_blob = bucket.blob(report_blob_path)
+        # ✅ Handle custom filename
+        if custom_filename:
+            if not custom_filename.endswith('.xlsx'):
+                filename = f"{custom_filename}.xlsx"
+            else:
+                filename = custom_filename
+        else:
+            filename = f"{sol_id}_Visit_{visit_no}.xlsx"
         
-        report_blob.metadata = {
-            'firebaseStorageDownloadTokens': str(uuid.uuid4())
+        pending_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/excel/{filename}"
+        pending_blob = bucket.blob(pending_path)
+        pending_blob.upload_from_file(excel_buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        
+        # ✅ Save metadata with user comments
+        metadata = {
+            'sol_id': sol_id,
+            'visit_no': visit_no,
+            'region': region,
+            'reviewer_email': reviewer_email,
+            'user_email': user_email,
+            'user_name': user_name,
+            'filename': filename,
+            'session_id': session_id,
+            'status': 'pending',
+            'submitted_at': datetime.now().isoformat(),
+            'user_comments': user_comments  # ✅ NEW: Save comments
         }
-        report_blob.content_disposition = f'attachment; filename="{project_name}_Visit_{visit_no}_Final.xlsx"'
         
-        excel_buffer.seek(0)
-        report_blob.upload_from_file(
-            excel_buffer, 
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
+        metadata_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/metadata.json"
+        bucket.blob(metadata_path).upload_from_string(json.dumps(metadata), content_type='application/json')
         
-        report_blob.make_public()
-        
-        # Save/update the form data JSON
-        if form_data_json:
-            json_blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json"
-            json_blob = bucket.blob(json_blob_path)
-            json_blob.upload_from_string(form_data_json, content_type='application/json')
-        
-        print(f"✅ Final report uploaded for SOL ID: {sol_id}, Visit: {visit_no}")
-        
-        return jsonify({
-            'success': True,
-            'message': 'Final report saved to Firebase successfully',
-            'firebase_url': report_blob.public_url
-        })
+        return jsonify({'success': True, 'session_id': session_id})
         
     except Exception as e:
-        print(f"Upload error: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/get-pending-reviews', methods=['POST'])
+def get_pending_reviews():
+    try:
+        data = request.json
+        user_email = data.get('user_email')
+        region = data.get('region')
+        user_type = data.get('user_type')  # 'reviewer' or 'user'
+        
+        pending_reviews = []
+        
+        prefix = f"ICICI_Site_Progress_Report/{region}/pending_reviews/"
+        blobs = bucket.list_blobs(prefix=prefix)
+        
+        session_ids = set()
+        for blob in blobs:
+            if 'metadata.json' in blob.name:
+                parts = blob.name.split('/')
+                if len(parts) >= 4:
+                    session_ids.add(parts[3])
+        
+        for session_id in session_ids:
+            metadata_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/metadata.json"
+            try:
+                metadata_blob = bucket.blob(metadata_path)
+                if metadata_blob.exists():
+                    metadata = json.loads(metadata_blob.download_as_string())
+                    
+                    if user_type == 'reviewer' and metadata.get('reviewer_email') == user_email:
+                        pending_reviews.append(metadata)
+                    elif user_type == 'user' and metadata.get('user_email') == user_email:
+                        pending_reviews.append(metadata)
+            except:
+                continue
+        
+        return jsonify({'reviews': pending_reviews})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-completed-reviews', methods=['POST'])
+def get_completed_reviews():
+    try:
+        data = request.json
+        user_email = data.get('user_email')
+        region = data.get('region')
+        user_type = data.get('user_type')
+        
+        completed_reviews = []
+        
+        prefix = f"ICICI_Site_Progress_Report/{region}/completed_reviews/"
+        blobs = bucket.list_blobs(prefix=prefix)
+        
+        session_ids = set()
+        for blob in blobs:
+            if 'metadata.json' in blob.name:
+                parts = blob.name.split('/')
+                if len(parts) >= 4:
+                    session_ids.add(parts[3])
+        
+        for session_id in session_ids:
+            metadata_path = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/metadata.json"
+            try:
+                metadata_blob = bucket.blob(metadata_path)
+                if metadata_blob.exists():
+                    metadata = json.loads(metadata_blob.download_as_string())
+                    
+                    if user_type == 'reviewer' and metadata.get('reviewer_email') == user_email:
+                        completed_reviews.append(metadata)
+                    elif user_type == 'user' and metadata.get('user_email') == user_email:
+                        completed_reviews.append(metadata)
+            except:
+                continue
+        
+        return jsonify({'reviews': completed_reviews})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/submit-review-decision', methods=['POST'])
+def submit_review_decision():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        region = data.get('region')
+        decision = data.get('decision')  # 'approved' or 'rejected'
+        comments = data.get('comments', '')
+        reviewer_email = data.get('reviewer_email')
+        corrected_file_data = data.get('corrected_file')  # base64 if uploaded
+        
+        # Get metadata
+        metadata_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/metadata.json"
+        metadata_blob = bucket.blob(metadata_path)
+        metadata = json.loads(metadata_blob.download_as_string())
+        
+        # Generate review code only if approved
+        review_code = None
+        if decision == 'approved':
+            import random
+            import string
+            review_code = 'S' + ''.join(random.choices(string.digits + string.ascii_uppercase, k=4))
+        
+        # Update metadata
+        metadata['status'] = decision
+        metadata['review_code'] = review_code
+        metadata['reviewer_comments'] = comments
+        metadata['reviewed_at'] = datetime.now().isoformat()
+        
+        # Move to completed
+        completed_base = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/"
+        
+        # Copy original Excel
+        original_excel_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/excel/{metadata['filename']}"
+        new_excel_path = f"{completed_base}excel/{metadata['filename']}"
+        
+        source_blob = bucket.blob(original_excel_path)
+        bucket.copy_blob(source_blob, bucket, new_excel_path)
+        
+        # Save corrected file if provided
+        if corrected_file_data:
+            import base64
+            file_bytes = base64.b64decode(corrected_file_data.split(',')[1])
+            corrected_path = f"{completed_base}corrected_excel/Corrected_{metadata['filename']}"
+            bucket.blob(corrected_path).upload_from_string(file_bytes, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            metadata['corrected_file_path'] = corrected_path
+        
+        # Save updated metadata
+        completed_metadata_path = f"{completed_base}metadata.json"
+        bucket.blob(completed_metadata_path).upload_from_string(json.dumps(metadata), content_type='application/json')
+        
+        # If approved, save to final location and increment count
+        if decision == 'approved':
+            sol_id = metadata['sol_id']
+            visit_no = metadata['visit_no']
+            
+            # Save to final storage
+            final_path = f"ICICI_Site_Progress_Report/{region}/{sol_id}/Visit_{visit_no}/report.xlsx"
+            bucket.copy_blob(source_blob, bucket, final_path)
+            
+            # Make public
+            final_blob = bucket.blob(final_path)
+            final_blob.make_public()
+            
+            # Increment user count
+            user_email = metadata['user_email']
+            count_path = f"ICICI_Site_Progress_Report/{region}/user_stats/{user_email.replace('@', '_at_')}/count.json"
+            count_blob = bucket.blob(count_path)
+            
+            current_count = 0
+            if count_blob.exists():
+                count_data = json.loads(count_blob.download_as_string())
+                current_count = count_data.get('approved_count', 0)
+            
+            current_count += 1
+            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now().isoformat()}), content_type='application/json')
+        
+        # Delete from pending
+        pending_blobs = bucket.list_blobs(prefix=f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/")
+        for blob in pending_blobs:
+            blob.delete()
+        
+        return jsonify({'success': True, 'review_code': review_code})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-user-count', methods=['POST'])
+def get_user_count():
+    try:
+        data = request.json
+        user_email = data.get('user_email')
+        region = data.get('region')
+        
+        count_path = f"ICICI_Site_Progress_Report/{region}/user_stats/{user_email.replace('@', '_at_')}/count.json"
+        count_blob = bucket.blob(count_path)
+        
+        if count_blob.exists():
+            count_data = json.loads(count_blob.download_as_string())
+            return jsonify({'count': count_data.get('approved_count', 0)})
+        
+        return jsonify({'count': 0})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/get-all-approved-reports', methods=['POST'])
+def get_all_approved_reports():
+    try:
+        data = request.json
+        region = data.get('region')
+        
+        reports = []
+        
+        # List all approved reports in region
+        prefix = f"ICICI_Site_Progress_Report/{region}/"
+        blobs = bucket.list_blobs(prefix=prefix)
+        
+        for blob in blobs:
+            if '/report.xlsx' in blob.name and '/temp_drafts/' not in blob.name:
+                parts = blob.name.split('/')
+                if len(parts) >= 4:
+                    sol_id = parts[2]
+                    visit_folder = parts[3]
+                    visit_no = visit_folder.replace('Visit_', '')
+                    
+                    reports.append({
+                        'sol_id': sol_id,
+                        'visit_no': visit_no,
+                        'download_url': blob.public_url,
+                        'filename': f"{sol_id}_Visit_{visit_no}.xlsx"
+                    })
+        
+        return jsonify({'reports': reports})
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/download-review-file', methods=['POST'])
+def download_review_file():
+    try:
+        data = request.json
+        session_id = data.get('session_id')
+        region = data.get('region')
+        file_type = data.get('file_type')  # 'original' or 'corrected'
+        status = data.get('status')  # 'pending' or 'completed'
+        
+        if status == 'pending':
+            metadata_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/metadata.json"
+        else:
+            metadata_path = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/metadata.json"
+        
+        metadata_blob = bucket.blob(metadata_path)
+        metadata = json.loads(metadata_blob.download_as_string())
+        
+        if file_type == 'original':
+            if status == 'pending':
+                file_path = f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/excel/{metadata['filename']}"
+            else:
+                file_path = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/excel/{metadata['filename']}"
+        else:
+            file_path = metadata.get('corrected_file_path')
+            if not file_path:
+                return jsonify({'error': 'No corrected file available'}), 404
+        
+        file_blob = bucket.blob(file_path)
+        if not file_blob.exists():
+            return jsonify({'error': 'File not found'}), 404
+        
+        file_bytes = file_blob.download_as_bytes()
+        file_buffer = io.BytesIO(file_bytes)
+        
+        return send_file(
+            file_buffer,
+            as_attachment=True,
+            download_name=metadata['filename'],
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
