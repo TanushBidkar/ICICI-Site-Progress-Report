@@ -521,9 +521,9 @@
             <input type="text" id="branch_code" name="branch_code" readonly style="background-color: #f0f0f0;">
         </div>
         <div class="form-group">
-            <label for="date_of_visit">Date of Visit</label>
-            <input type="date" id="date_of_visit" name="date_of_visit">
-        </div>
+    <label for="date_of_visit">Date of Visit</label>
+    <input type="text" id="date_of_visit" name="date_of_visit" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
+</div>
     </div>
 
     
@@ -925,21 +925,21 @@
         <input type="text" id="hvac_vendor" name="hvac_vendor">
     </div>
     <div class="form-group">
-        <label for="project_start_date">Project Start Date</label>
-        <input type="date" id="project_start_date" name="project_start_date">
-    </div>
-    <div class="form-group">
-        <label for="planned_handover_date">Planned Handover Date</label>
-        <input type="date" id="planned_handover_date" name="planned_handover_date">
-    </div>
-    <div class="form-group">
-        <label for="actual_handover_date">Actual Handover Date</label>
-        <input type="date" id="actual_handover_date" name="actual_handover_date">
-    </div>
-    <div class="form-group">
-        <label for="quality_date_of_visit">Date of Visit</label>
-        <input type="date" id="quality_date_of_visit" name="quality_date_of_visit" readonly style="background-color: #f0f0f0;">
-    </div>
+    <label for="project_start_date">Project Start Date</label>
+    <input type="text" id="project_start_date" name="project_start_date" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
+</div>
+<div class="form-group">
+    <label for="planned_handover_date">Planned Handover Date</label>
+    <input type="text" id="planned_handover_date" name="planned_handover_date" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
+</div>
+<div class="form-group">
+    <label for="actual_handover_date">Actual Handover Date</label>
+    <input type="text" id="actual_handover_date" name="actual_handover_date" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
+</div>
+<div class="form-group">
+    <label for="quality_date_of_visit">Date of Visit</label>
+    <input type="text" id="quality_date_of_visit" name="quality_date_of_visit" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" readonly style="background-color: #f0f0f0;">
+</div>
 </div>
 
 <h3 style="margin: 20px 0; color: #667eea;">Quality Observations</h3>
@@ -1150,12 +1150,12 @@
 
         <div class="form-group">
     <label for="user_email_input">Your Email *</label>
-    <input type="email" id="user_email_input" required placeholder="your.email@company.com" readonly style="background-color: #f0f0f0;">
+    <input type="email" id="user_email_input" required placeholder="your.email@company.com">
 </div>
 
 <div class="form-group">
     <label for="user_name_input">Your Name *</label>
-    <input type="text" id="user_name_input" required placeholder="Your Full Name" readonly style="background-color: #f0f0f0;">
+    <input type="text" id="user_name_input" required placeholder="Your Full Name">
 </div>
 
         <div class="form-group">
@@ -2662,31 +2662,196 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show the Login Modal
         const modalHTML = `
-            <div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-                <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
-                    <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to View Reviews</h2>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
-                        <input type="email" id="loginEmail" placeholder="your.email@cushwake.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                    </div>
-                    
-                    <div style="margin-bottom: 25px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
-                        <input type="password" id="loginPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                    </div>
-                    
-                    <div id="loginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
-                    
-                    <div style="display: flex; gap: 15px; justify-content: center;">
-                        <button class="btn btn-secondary" onclick="document.getElementById('loginModal').remove()">Cancel</button>
-                        <button class="btn btn-primary" onclick="verifyLogin()">Login</button>
-                    </div>
+        <div id="reviewOptionsModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 500px; width: 90%; text-align: center;">
+                <h2 style="color: #667eea; margin-bottom: 30px;">📊 Site Progress Report Options</h2>
+                
+                <button class="btn btn-primary" onclick="openUploadForReview()" style="width: 100%; margin-bottom: 20px; padding: 20px; font-size: 1.2em;">
+                    📤 Upload for Review
+                </button>
+                
+                <button class="btn" style="background: #28a745; color: white; width: 100%; padding: 20px; font-size: 1.2em;" onclick="openReviewDashboardLogin()">
+                    📋 Check Review Status
+                </button>
+                
+                <button class="btn btn-secondary" onclick="closeReviewOptionsModal()" style="width: 100%; margin-top: 20px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeReviewOptionsModal() {
+    const modal = document.getElementById('reviewOptionsModal');
+    if (modal) modal.remove();
+}
+
+function openUploadForReview() {
+    closeReviewOptionsModal();
+    
+    const modalHTML = `
+        <div id="uploadLoginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
+                <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to Upload</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
+                    <input type="email" id="uploadEmail" placeholder="your.email@cushwake.com" value="${currentUserEmail}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Name *</label>
+                    <input type="text" id="uploadName" placeholder="Your Full Name" value="${currentUserName}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
+                    <input type="password" id="uploadPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div id="uploadLoginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
+                
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="closeUploadLoginModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="verifyUploadLogin()">Continue</button>
                 </div>
             </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeUploadLoginModal() {
+    const modal = document.getElementById('uploadLoginModal');
+    if (modal) modal.remove();
+}
+
+async function verifyUploadLogin() {
+    const email = document.getElementById('uploadEmail').value.trim();
+    const name = document.getElementById('uploadName').value.trim();
+    const password = document.getElementById('uploadPassword').value.trim();
+    const errorDiv = document.getElementById('uploadLoginError');
+    
+    if (!email || !name || !password) {
+        errorDiv.textContent = 'Please fill all fields';
+        errorDiv.style.display = 'block';
+        return;
     }
+    
+    try {
+        const response = await fetch('/verify-user-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentUserEmail = email;
+            currentUserName = name;
+            localStorage.setItem('currentUser', email);
+            localStorage.setItem('userName', name);
+            
+            closeUploadLoginModal();
+            
+            // Navigate to section 5 (Upload for Review page)
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`section${i}`).classList.remove('active');
+            }
+            document.getElementById('section5').classList.add('active');
+            
+            // Pre-fill the form
+            document.getElementById('user_email_input').value = currentUserEmail;
+            document.getElementById('user_name_input').value = currentUserName;
+            
+            window.scrollTo(0, 0);
+        } else {
+            errorDiv.textContent = result.error || 'Login failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Server error. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+}
+
+function openReviewDashboardLogin() {
+    closeReviewOptionsModal();
+    
+    const modalHTML = `
+        <div id="dashboardLoginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
+                <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to View Status</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
+                    <input type="email" id="dashboardEmail" placeholder="your.email@cushwake.com" value="${currentUserEmail}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
+                    <input type="password" id="dashboardPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div id="dashboardLoginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
+                
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="closeDashboardLoginModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="verifyDashboardLogin()">Continue</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+function closeDashboardLoginModal() {
+    const modal = document.getElementById('dashboardLoginModal');
+    if (modal) modal.remove();
+}
+
+async function verifyDashboardLogin() {
+    const email = document.getElementById('dashboardEmail').value.trim();
+    const password = document.getElementById('dashboardPassword').value.trim();
+    const errorDiv = document.getElementById('dashboardLoginError');
+    
+    if (!email || !password) {
+        errorDiv.textContent = 'Please enter both email and password';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/verify-user-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            currentUserEmail = result.email;
+            currentUserName = result.name;
+            currentRegion = result.region || '';
+            
+            localStorage.setItem('currentUser', result.email);
+            localStorage.setItem('userName', result.name);
+            
+            closeDashboardLoginModal();
+            showReviewDashboard();
+        } else {
+            errorDiv.textContent = result.error || 'Login failed';
+            errorDiv.style.display = 'block';
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Server error. Please try again.';
+        errorDiv.style.display = 'block';
+    }
+}
 
     // ✅ Function to verify login with backend
     async function verifyLogin() {
@@ -2848,6 +3013,62 @@ function accessReviewDashboard() {
     // Show review dashboard
     showReviewDashboard();
 }
+
+// ===== DATE FORMATTING TO DD/MM/YYYY =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all date input fields
+    const dateInputs = document.querySelectorAll('input[placeholder="DD/MM/YYYY"]');
+    
+    dateInputs.forEach(input => {
+        // Auto-fill today's date when field is focused and empty
+        input.addEventListener('focus', function() {
+            if (!this.value || this.value.trim() === '') {
+                const today = new Date();
+                const dd = String(today.getDate()).padStart(2, '0');
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const yyyy = today.getFullYear();
+                this.value = `${dd}/${mm}/${yyyy}`;
+            }
+        });
+        
+        // Format as user types
+        input.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+            
+            // Add slashes automatically
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2);
+            }
+            if (value.length >= 5) {
+                value = value.slice(0, 5) + '/' + value.slice(5, 9);
+            }
+            
+            // Limit to 10 characters (DD/MM/YYYY)
+            e.target.value = value.slice(0, 10);
+        });
+        
+        // Validate on blur
+        input.addEventListener('blur', function() {
+            const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+            const match = this.value.match(datePattern);
+            
+            if (match) {
+                const day = parseInt(match[1]);
+                const month = parseInt(match[2]);
+                const year = parseInt(match[3]);
+                
+                // Basic validation
+                if (day < 1 || day > 31 || month < 1 || month > 12) {
+                    alert('Invalid date format. Please use DD/MM/YYYY');
+                    this.value = '';
+                }
+            } else if (this.value && this.value.trim() !== '') {
+                alert('Invalid date format. Please use DD/MM/YYYY (e.g., 31/12/2025)');
+                this.value = '';
+            }
+        });
+    });
+});
 
     </script>
 </body>
