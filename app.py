@@ -1386,7 +1386,7 @@ def submit_for_review():
             'filename': filename,
             'session_id': session_id,
             'status': 'pending',
-            'submitted_at': datetime.now().isoformat(),
+            'submitted_at': datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'),
             'user_comments': user_comments  # ✅ NEW: Save comments
         }
         
@@ -1503,7 +1503,7 @@ def submit_review_decision():
         metadata['status'] = decision
         metadata['review_code'] = review_code
         metadata['reviewer_comments'] = comments
-        metadata['reviewed_at'] = datetime.now().isoformat()
+        metadata['reviewed_at'] = datetime.now().strftime('%d/%m/%Y %I:%M:%S %p')
         
         # Move to completed
         completed_base = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/"
@@ -1551,7 +1551,7 @@ def submit_review_decision():
                 current_count = count_data.get('approved_count', 0)
             
             current_count += 1
-            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now().isoformat()}), content_type='application/json')
+            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now().strftime('%d/%m/%Y %I:%M:%S %p')}), content_type='application/json')
         
         # Delete from pending
         pending_blobs = bucket.list_blobs(prefix=f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/")
