@@ -1652,9 +1652,55 @@ def download_review_file():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
+@app.route('/get-session-data', methods=['POST'])
+def get_session_data():
+    """Fetch user session data from Firebase"""
+    try:
+        from firebase_admin import firestore
+        db_firestore = firestore.client()
+        
+        data = request.json
+        session_id = data.get('session_id')
+        
+        if not session_id:
+            return jsonify({'error': 'No session ID provided'}), 400
+        
+        # Get session from Firestore
+        session_ref = db_firestore.collection('userSessions').document(session_id)
+        session_doc = session_ref.get()
+        
+        if not session_doc.exists:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        session_data = session_doc.to_dict()
+        
+        # Check if session is expired
+        from datetime import datetime
+        expires_at = session_data.get('expiresAt')
+        
+        if expires_at:
+            # Convert Firestore timestamp to datetime if needed
+            if hasattr(expires_at, 'timestamp'):
+                expires_at = datetime.fromtimestamp(expires_at.timestamp())
+            
+            if expires_at < datetime.now():
+                return jsonify({'error': 'Session expired'}), 401
+        
+        # Update last active time
+        session_ref.update({
+            'lastActive': firestore.SERVER_TIMESTAMP
+        })
+        
+        return jsonify({
+            'email': session_data.get('email'),
+            'name': session_data.get('name'),
+            'success': True
+        })
+        
+    except Exception as e:
+        print(f"Error fetching session: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
-
