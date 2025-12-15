@@ -18,6 +18,7 @@ from openpyxl.styles import PatternFill  # Add this line
 import os
 from dotenv import load_dotenv
 import gc  # Add this line at the top with other imports
+import bcrypt
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
@@ -43,6 +44,11 @@ if not firebase_admin._apps:
     })
 
 bucket = storage.bucket()
+
+
+# ✅ ADD THIS LINE:
+from firebase_admin import firestore
+db = firestore.client()
 # Region-wise reviewers configuration
 REGION_REVIEWERS = {
     'West': [
@@ -1700,6 +1706,72 @@ def get_session_data():
     except Exception as e:
         print(f"Error fetching session: {e}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/verify-user-login', methods=['POST'])
+def verify_user_login():
+    data = request.json
+    email = data.get('email', '').strip()
+    password = data.get('password', '').strip()
+    
+    if not email or not password:
+        return jsonify({'success': False, 'error': 'Email and password required'}), 400
+    
+    try:
+        # Check in users collection
+        users_ref = db.collection('users')
+        query = users_ref.where('email', '==', email).limit(1)
+        docs = query.stream()
+        
+        user_doc = None
+        for doc in docs:
+            user_doc = doc
+            break
+        
+        if not user_doc:
+            return jsonify({'success': False, 'error': 'User not found'}), 401
+        
+        user_data = user_doc.to_dict()
+        stored_password = user_data.get('password', '')
+
+        # ✅ FIX: Verify Password using Bcrypt
+        password_valid = False
+        
+        # Case 1: Password is hashed (starts with $2b$)
+        if stored_password.startswith('$2b$'):
+            try:
+                # Compare the plain text input with the stored hash
+                if bcrypt.checkpw(password.encode('utf-8'), stored_password.encode('utf-8')):
+                    password_valid = True
+            except Exception as e:
+                print(f"Hashing error: {e}")
+                password_valid = False
+        # Case 2: Fallback for plain text passwords (if any exist)
+        else:
+            if stored_password == password:
+                password_valid = True
+
+        if password_valid:
+            # Determine region (check if reviewer)
+            region = None
+            if user_data.get('approved'):
+                # User is a reviewer, get their region
+                for reg, reviewers in REGION_REVIEWERS.items():
+                    if any(r['email'] == email for r in reviewers):
+                        region = reg
+                        break
+            
+            return jsonify({
+                'success': True,
+                'email': email,
+                'name': user_data.get('name', ''),
+                'region': region
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Incorrect password'}), 401
+            
+    except Exception as e:
+        print(f"Login Error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
