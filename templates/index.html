@@ -1279,43 +1279,94 @@ let isReviewer = false;
 
 // ✅ AUTO-FETCH CURRENT USER ON PAGE LOAD
 document.addEventListener('DOMContentLoaded', async () => {
-    // ✅ FIRST: Check URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const emailFromURL = urlParams.get('email');
-    const nameFromURL = urlParams.get('name');
     
-    if (emailFromURL) {
-        // Store in localStorage for this domain
-        localStorage.setItem('currentUser', emailFromURL);
-        localStorage.setItem('userName', nameFromURL || '');
+    // ✅ METHOD 1: Try session ID first (works cross-domain via Firebase)
+    const sessionId = urlParams.get('session') || localStorage.getItem('sessionId');
+    
+    if (sessionId) {
+        console.log('🔑 Found session ID:', sessionId);
         
-        // Remove from URL for security
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        console.log('✅ Email received from login:', emailFromURL);
+        try {
+            const response = await fetch('/get-session-data', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({session_id: sessionId})
+            });
+            
+            if (response.ok) {
+                const sessionData = await response.json();
+                
+                if (sessionData.success) {
+                    currentUserEmail = sessionData.email;
+                    currentUserName = sessionData.name;
+                    
+                    // Save to localStorage
+                    localStorage.setItem('currentUser', sessionData.email);
+                    localStorage.setItem('userName', sessionData.name);
+                    localStorage.setItem('sessionId', sessionId);
+                    
+                    console.log('✅ Session loaded successfully:', currentUserEmail);
+                    
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    console.warn('⚠️ Session validation failed');
+                    tryEmailFromURL();
+                }
+            } else {
+                console.error('❌ Session fetch failed');
+                tryEmailFromURL();
+            }
+        } catch (error) {
+            console.error('❌ Error fetching session:', error);
+            tryEmailFromURL();
+        }
+    } else {
+        // No session ID, try other methods
+        tryEmailFromURL();
     }
     
-    // ✅ THEN: Auto-detect from localStorage
-    const storedEmail = localStorage.getItem('currentUser');
-    const storedName = localStorage.getItem('userName');
+    // Helper function to try email from URL
+    function tryEmailFromURL() {
+        // ✅ METHOD 2: Try email from URL parameter
+        const emailFromURL = urlParams.get('email');
+        const nameFromURL = urlParams.get('name');
+        
+        if (emailFromURL) {
+            currentUserEmail = emailFromURL;
+            currentUserName = nameFromURL || '';
+            
+            localStorage.setItem('currentUser', emailFromURL);
+            localStorage.setItem('userName', nameFromURL || '');
+            
+            console.log('✅ Email loaded from URL:', emailFromURL);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            // ✅ METHOD 3: Try localStorage (same domain only)
+            const storedEmail = localStorage.getItem('currentUser');
+            const storedName = localStorage.getItem('userName');
+            
+            if (storedEmail) {
+                currentUserEmail = storedEmail;
+                currentUserName = storedName || '';
+                console.log('✅ Email loaded from localStorage:', storedEmail);
+            } else {
+                console.log('⚠️ No user email found');
+            }
+        }
+    }
     
-    if (storedEmail) {
-        currentUserEmail = storedEmail;
-        currentUserName = storedName || '';
-        
-        console.log('✅ Auto-detected user:', currentUserEmail);
-        
-        // Auto-detect region for reviewers
+    // Auto-detect region for reviewers (after email is loaded)
+    if (currentUserEmail) {
         for (const region in REGION_REVIEWERS) {
-            if (REGION_REVIEWERS[region].some(r => r.email === storedEmail)) {
+            if (REGION_REVIEWERS[region].some(r => r.email === currentUserEmail)) {
                 currentRegion = region;
                 isReviewer = true;
                 console.log('✅ Reviewer detected for region:', region);
                 break;
             }
         }
-    } else {
-        console.log('⚠️ No user email found');
     }
     
     // Initialize default entries
