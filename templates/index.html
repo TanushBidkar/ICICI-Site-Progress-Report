@@ -486,6 +486,12 @@
                         </div>
                     </div>
 
+                     <div style="text-align: center; margin: 30px 0;">
+        <button type="button" class="btn" style="background: #17a2b8; color: white; padding: 15px 30px; font-size: 1.1em;" onclick="openReviewsFromHome()">
+            📊 Site Progress Report Reviews
+        </button>
+    </div>
+
                     <div class="btn-group">
                         <div></div>
                         <button type="button" class="btn btn-primary" onclick="nextSection(1)">
@@ -1112,38 +1118,109 @@
                 </div>
 
                 
-    <div class="section" id="section5">
+            <!-- Section 5: Region & Reviewer Selection -->
+<div class="section" id="section5">
     <div class="section-header">
-        <span>📤</span>
-        <h2>Upload Final Report</h2>
+        <span>📍</span>
+        <h2>Select Region & Reviewer</h2>
     </div>
 
-    <div id="instructionBox" style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #ffc107;">
-        <h3 style="color: #856404; margin-bottom: 10px;">📋 Verification Instructions:</h3>
-        <ol style="line-height: 2.0; color: #856404; font-size: 1.1em;">
-            <li><strong>Your report has been downloaded.</strong> Open it in Excel.</li>
-            <li><strong>Verify all details</strong> including Progress Report, Site photographs with Remarks, and Quality Observations.</li>
-            <li><strong>Make Edits:</strong> If needed, adjust text or replace photos manually in Excel.</li>
-            <li><strong>Save & Upload:</strong> Save the file (Ctrl+S) and upload the final version below.</li>
-        </ol>
-    </div>
+    <div class="form-grid">
+        <div class="form-group">
+            <label for="region_select">Select Region *</label>
+            <select id="region_select" required onchange="loadReviewers()">
+                <option value="">Choose Region</option>
+                <option value="West">West</option>
+                <option value="East">East</option>
+                <option value="South">South</option>
+                <option value="North">North</option>
+            </select>
+        </div>
 
-    <div style="background: white; padding: 40px; border: 3px dashed #667eea; border-radius: 15px; text-align: center;">
-        <h3 style="color: #667eea; margin-bottom: 15px;">Upload Verified Excel File</h3>
-        <input type="file" id="finalExcelUpload" accept=".xlsx,.xls" style="display: none;" onchange="handleFileSelect(this)">
-        <button type="button" class="btn btn-primary" onclick="document.getElementById('finalExcelUpload').click()" style="padding: 15px 30px;">
-            📁 Choose Final File
-        </button>
-        <div id="fileInfo" style="display: none; margin-top: 15px;">
-            <p>✅ Selected: <span id="fileName" style="font-weight:bold;"></span></p>
+        <div class="form-group">
+            <label for="reviewer_select">Select Reviewer *</label>
+            <select id="reviewer_select" required disabled>
+                <option value="">First select a region</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+    <label for="user_email_input">Your Email *</label>
+    <input type="email" id="user_email_input" required placeholder="your.email@company.com" readonly style="background-color: #f0f0f0;">
+</div>
+
+<div class="form-group">
+    <label for="user_name_input">Your Name *</label>
+    <input type="text" id="user_name_input" required placeholder="Your Full Name" readonly style="background-color: #f0f0f0;">
+</div>
+
+        <div class="form-group">
+            <label for="sol_id_confirm">SOL ID *</label>
+            <input type="text" id="sol_id_confirm" required readonly style="background-color: #f0f0f0;">
+        </div>
+
+        <div class="form-group">
+            <label for="visit_no_confirm">Visit Number *</label>
+            <input type="text" id="visit_no_confirm" required readonly style="background-color: #f0f0f0;">
         </div>
     </div>
 
-    <div class="btn-group">
-        <button type="button" class="btn btn-secondary" onclick="goBackToEdit()">← Back to Edit</button>
-        <button type="button" class="btn btn-primary" onclick="uploadFinalReport()" id="uploadBtn" disabled style="opacity: 0.5; background: #28a745 !important;">
-    💾 Finalize & Save to Database
-</button>
+    <div class="form-group" style="grid-column: 1 / -1;">
+    <label for="user_comments">Comments for Reviewer (Optional)</label>
+    <textarea id="user_comments" placeholder="Add any notes or instructions for the reviewer..." style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; resize: vertical;"></textarea>
+</div>
+
+    <div style="background: white; padding: 40px; border: 3px dashed #667eea; border-radius: 15px; text-align: center; margin-top: 20px;">
+    <h3 style="color: #667eea; margin-bottom: 15px;">Upload Your Downloaded Excel File</h3>
+    
+    <input type="file" id="reviewExcelUpload" accept=".xlsx,.xls" style="display: none;" onchange="handleReviewFileSelect(this)">
+    
+    <button type="button" class="btn btn-primary" onclick="document.getElementById('reviewExcelUpload').click()" style="padding: 15px 30px;">
+        📁 Choose Excel File
+    </button>
+    
+    <div id="reviewFileInfo" style="display: none; margin-top: 20px;">
+        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; display: inline-block;">
+            <p style="margin: 0; color: #28a745; font-weight: bold;">✅ <span id="reviewFileName"></span></p>
+        </div>
+        
+        <!-- ✅ RENAME DIRECTLY HERE -->
+        <div style="margin-top: 15px;">
+            <input type="text" id="custom_filename" placeholder="Rename file (without extension)" 
+                   style="padding: 12px; width: 350px; border: 2px solid #667eea; border-radius: 8px; font-size: 1em;">
+            <p style="color: #666; font-size: 0.85em; margin-top: 5px;">Leave blank to keep original name</p>
+        </div>
+    </div>
+</div>
+
+    <div class="btn-group" style="margin-top: 40px;">
+        <button type="button" class="btn btn-secondary" onclick="goBackToStep4()">← Back to Edit</button>
+        <button type="button" class="btn btn-primary" onclick="submitForReview()" id="submitReviewBtn" disabled style="opacity: 0.5; background: #28a745 !important;">
+            📤 Submit for Review
+        </button>
+    </div>
+</div>
+
+<!-- Section 6: Review Dashboard -->
+<div class="section" id="section6">
+    <div class="section-header">
+        <span>📊</span>
+        <h2>Site Progress Report Reviews</h2>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h3 style="color: #667eea;">Your Approved Reports Count: <span id="userApprovedCount" style="font-size: 2em; color: #28a745;">0</span></h3>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+        <button class="btn btn-primary" onclick="showPendingReviews()">📋 Pending Reviews</button>
+        <button class="btn" style="background: #28a745; color: white;" onclick="showCompletedReviews()">✅ Completed Reviews</button>
+        <button class="btn btn-secondary" onclick="showAllApprovedReports()">📁 All Approved Reports</button>
+        <button class="btn" style="background: #6c757d; color: white;" onclick="goBackToHome()">🏠 New Report</button>
+    </div>
+
+    <div id="reviewsContainer" style="min-height: 400px;">
+        <!-- Reviews will be loaded here -->
     </div>
 </div>
             <div class="loading" id="loadingOverlay">
@@ -1182,39 +1259,74 @@
         /* =========================================
    1. GLOBAL VARIABLES & INITIALIZATION
    ========================================= */
-let currentSection = 1;
-let otherCount = 0; // For "Others" in Step 2
 
-// New counters for Step 3 Categories
+/* =========================================
+   GLOBAL VARIABLES & INITIALIZATION
+   ========================================= */
+let currentSection = 1;
+let otherCount = 0;
 let workCount = 0;
 let qualityCount = 0;
 let makeCount = 0;
-
-// Cropper variables
 let cropper = null;
-let currentCropType = ''; // 'work', 'qual', 'make'
+let currentCropType = '';
 let currentCropIndex = 0;
+// ========== AUTO-DETECT LOGGED IN USER ==========
+let currentUserEmail = '';
+let currentUserName = '';
+let currentRegion = '';
+let isReviewer = false;
 
-// Initialize Step 2 "Others" and Step 3 Initial Entries on Load
-document.addEventListener('DOMContentLoaded', () => {
-    // Add initial entries for Step 3 Categories
+// ✅ AUTO-FETCH CURRENT USER ON PAGE LOAD
+document.addEventListener('DOMContentLoaded', async () => {
+    await autoDetectCurrentUser();
     addWorkEntry();
     addQualityEntry();
     addMakeModelEntry();
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('view') === 'reviews') {
+        showReviewDashboard();
+    }
 });
 
+// ✅ NEW FUNCTION: Automatically detect logged-in user
+async function autoDetectCurrentUser() {
+    try {
+        const userEmail = localStorage.getItem('currentUser');
+        const userName = localStorage.getItem('userName');
+        
+        if (userEmail) {
+            currentUserEmail = userEmail;
+            currentUserName = userName || '';
+            
+            console.log('✅ Auto-detected user:', currentUserEmail);
+            
+            // Auto-detect region for reviewers
+            for (const region in REGION_REVIEWERS) {
+                if (REGION_REVIEWERS[region].some(r => r.email === userEmail)) {
+                    currentRegion = region;
+                    isReviewer = true;
+                    console.log('✅ Reviewer detected for region:', region);
+                    break;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error auto-detecting user:', error);
+    }
+}
+
 /* =========================================
-   2. EVENT LISTENERS & BASIC INFO
+   EVENT LISTENERS & BASIC INFO
    ========================================= */
 document.getElementById('sol_id').addEventListener('input', async function() {
     const solId = this.value;
     
-    // Auto-fill Branch Code
     if(solId) {
         document.getElementById('branch_code').value = solId;
     }
 
-    // Fetch Project Name
     if (solId) {
         try {
             const response = await fetch('/get-project-name', {
@@ -1233,10 +1345,9 @@ document.getElementById('sol_id').addEventListener('input', async function() {
 });
 
 /* =========================================
-   3. NAVIGATION & VALIDATION
+   NAVIGATION & VALIDATION
    ========================================= */
 async function nextSection(section) {
-    // 1. Validation Logic
     const currentForm = document.getElementById(`section${section}`);
     const requiredFields = currentForm.querySelectorAll('[required]');
     let valid = true;
@@ -1255,7 +1366,6 @@ async function nextSection(section) {
         return;
     }
 
-    // 2. Button State Management
     const nextBtn = currentForm.querySelector('.btn-primary');
     if(nextBtn) {
         const originalText = nextBtn.innerText;
@@ -1263,11 +1373,8 @@ async function nextSection(section) {
         nextBtn.innerText = "Processing...";
         nextBtn.style.opacity = "0.7";
         
-        // 3. Section 1 Specific Logic (Check Existing Data)
         if (section === 1) {
             try {
-                // Clear form logic can be placed here if you want to reset before checking
-                // clearForm(); 
                 await checkExistingData();
             } catch (error) {
                 console.error("Error checking data:", error);
@@ -1279,38 +1386,32 @@ async function nextSection(section) {
         nextBtn.style.opacity = "1";
     }
 
-    // 4. Move to Next Section
-   // 4. Move to Next Section
-document.getElementById(`section${section}`).classList.remove('active');
-document.getElementById(`section${section + 1}`).classList.add('active');
+    document.getElementById(`section${section}`).classList.remove('active');
+    document.getElementById(`section${section + 1}`).classList.add('active');
 
-// Auto-fill Branch Code when moving to section 2
-if (section === 1) {
-    const solId = document.getElementById('sol_id').value;
-    document.getElementById('branch_code').value = solId;
-}
+    if (section === 1) {
+        const solId = document.getElementById('sol_id').value;
+        document.getElementById('branch_code').value = solId;
+    }
 
-// Auto-fill Quality section when moving to section 4
-if (section === 3) {
-    autoFillQualitySection();
-}
+    if (section === 3) {
+        autoFillQualitySection();
+        document.getElementById('user_email_input').value = currentUserEmail;
+        document.getElementById('user_name_input').value = currentUserName;
+    }
 
-updateSteps(section + 1);
+    updateSteps(section + 1);
     updateProgress((section + 1) * 20);
     window.scrollTo(0, 0);
 }
 
-// Add this new function
 function autoFillQualitySection() {
-    // Copy Project Name to Project Title
     const projectName = document.getElementById('project_name').value;
     document.getElementById('quality_project_title').value = projectName;
     
-    // Copy Branch Area from Progress Report
     const branchArea = document.getElementById('branch_area').value;
     document.getElementById('quality_branch_area').value = branchArea;
     
-    // Copy Date of Visit from Progress Report
     const dateOfVisit = document.getElementById('date_of_visit').value;
     document.getElementById('quality_date_of_visit').value = dateOfVisit;
 }
@@ -1350,7 +1451,7 @@ function showAlert(message, type) {
 }
 
 /* =========================================
-   4. STEP 2 LOGIC (OTHERS SECTION)
+   STEP 2 LOGIC (OTHERS SECTION)
    ========================================= */
 function addOtherEntry() {
     const container = document.getElementById('othersContainer');
@@ -1370,10 +1471,8 @@ function addOtherEntry() {
 }
 
 /* =========================================
-   5. STEP 3 LOGIC (THE 3 CATEGORIES)
+   STEP 3 LOGIC (THE 3 CATEGORIES)
    ========================================= */
-
-// --- 5.1 Work Progress Entry ---
 function addWorkEntry() {
     const container = document.getElementById('workProgressContainer');
     const entry = document.createElement('div');
@@ -1414,7 +1513,6 @@ function addWorkEntry() {
     workCount++;
 }
 
-// --- 5.2 Quality Observation Entry ---
 function addQualityEntry() {
     const container = document.getElementById('qualityContainer');
     const entry = document.createElement('div');
@@ -1455,7 +1553,6 @@ function addQualityEntry() {
     qualityCount++;
 }
 
-// --- 5.3 Make/Model Entry ---
 function addMakeModelEntry() {
     const container = document.getElementById('makeModelContainer');
     const entry = document.createElement('div');
@@ -1500,393 +1597,16 @@ function deleteEntry(type, index) {
     if (confirm('Delete this entry? This will permanently remove it.')) {
         const entry = document.getElementById(`${type}_entry_${index}`);
         if (entry) {
-            // Mark as deleted
             const deletedMarker = document.createElement('input');
             deletedMarker.type = 'hidden';
             deletedMarker.name = `${type}_deleted_${index}`;
             deletedMarker.value = 'true';
             entry.appendChild(deletedMarker);
             
-            // Hide the entry
             entry.style.display = 'none';
-            
-            // Renumber remaining entries
             renumberEntries(type);
-            
             showAlert('Entry deleted', 'info');
         }
-    }
-}
-
-/* =========================================
-   6. CROPPER LOGIC (UPDATED FOR TYPES)
-   ========================================= */
-function initCropper(type, index) {
-    currentCropType = type;
-    currentCropIndex = index;
-    const input = document.getElementById(`${type}_file_${index}`);
-    
-    if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = document.getElementById('imageToCrop');
-            img.src = e.target.result;
-            
-            document.getElementById('cropModal').classList.add('show');
-            
-            // Destroy existing cropper if any
-            if (cropper) cropper.destroy();
-            
-            // Initialize new cropper
-            cropper = new Cropper(img, {
-                aspectRatio: 430 / 320, // Approx Excel cell ratio
-                viewMode: 1,
-                autoCropArea: 1
-            });
-        };
-        reader.readAsDataURL(input.files[0]);
-    }
-}
-
-function saveCrop() {
-    if (!cropper) return;
-    
-    // Get cropped canvas
-    const canvas = cropper.getCroppedCanvas({
-        width: 430,
-        height: 320
-    });
-    
-    const base64Data = canvas.toDataURL('image/jpeg', 0.9);
-    
-    // Save to the specific hidden input
-    document.getElementById(`${currentCropType}_crop_result_${currentCropIndex}`).value = base64Data;
-    
-    // Update the specific preview image
-    const previewImg = document.getElementById(`${currentCropType}_preview_${currentCropIndex}`);
-    const previewContainer = document.getElementById(`${currentCropType}_preview_container_${currentCropIndex}`);
-    const statusDiv = document.getElementById(`${currentCropType}_file_status_${currentCropIndex}`);
-    
-    previewImg.src = base64Data;
-    previewContainer.style.display = 'block';
-    statusDiv.style.display = 'block';
-    
-    closeCropper();
-    showAlert('Image cropped successfully!', 'info');
-}
-
-function closeCropper() {
-    document.getElementById('cropModal').classList.remove('show');
-    if (cropper) {
-        cropper.destroy();
-        cropper = null;
-    }
-    // Clear file input if user cancelled so they can re-select same file if needed
-    if (currentCropType && currentCropIndex !== null) {
-        const resultVal = document.getElementById(`${currentCropType}_crop_result_${currentCropIndex}`).value;
-        if (!resultVal) {
-            document.getElementById(`${currentCropType}_file_${currentCropIndex}`).value = "";
-        }
-    }
-}
-
-/* =========================================
-   7. EXISTING DATA HANDLING
-   ========================================= */
-async function checkExistingData() {
-    const solId = document.getElementById('sol_id').value;
-    const visitNo = document.getElementById('visit_no').value;
-    
-    if (!solId || !visitNo) return;
-    
-    try {
-        // Check current visit
-        const response = await fetch('/check-existing', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sol_id: solId, visit_no: visitNo })
-        });
-        const result = await response.json();
-
-        // Check/Fill Previous Visits (for progress percentages)
-        const currentVisit = parseInt(visitNo);
-        for (let v = 1; v < currentVisit; v++) {
-            const prevResponse = await fetch('/check-existing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sol_id: solId, visit_no: v.toString() })
-            });
-            const prevResult = await prevResponse.json();
-            if (prevResult.exists && prevResult.data) {
-                fillPreviousVisitData(prevResult.data, v);
-                fillPreviousOthersData(prevResult.data, v);
-            }
-        }
-
-        // Fill Current Visit
-        if (result.exists && result.data) {
-            if (confirm('Existing data found for Visit ' + visitNo + '. Load and edit?')) {
-                fillCurrentVisitData(result.data);
-                // Load Images/Entries for Step 3
-                await loadStep3Entries(result.data);
-            }
-        }
-    } catch (error) {
-        console.error('Error checking existing data:', error);
-    }
-}
-
-function fillCurrentVisitData(data) {
-    // Fill text inputs
-    for (let key in data) {
-        const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
-        if (element) {
-            element.value = data[key];
-        }
-    }
-    // Handle 'Others' for current visit
-    const count = parseInt(data.other_count) || 0;
-    document.getElementById('othersContainer').innerHTML = '';
-    otherCount = 0;
-    for(let i=0; i<count; i++) {
-        addOtherEntry();
-        // fill values...
-        document.querySelector(`input[name="other_item_${i}"]`).value = data[`other_item_${i}`] || '';
-        for(let v=1; v<=4; v++) {
-            document.querySelector(`input[name="other_item_${i}_visit${v}"]`).value = data[`other_item_${i}_visit${v}`] || '';
-        }
-        document.querySelector(`input[name="other_item_${i}_remark"]`).value = data[`other_item_${i}_remark`] || '';
-    }
-}
-
-function fillPreviousVisitData(data, visitNum) {
-    // Logic to fill previous visit columns as read-only
-    const inputs = document.querySelectorAll(`input[name$="_visit${visitNum}"]`);
-    inputs.forEach(input => {
-        const name = input.name; 
-        if (data[name]) {
-            input.value = data[name];
-            input.readOnly = true;
-            input.style.backgroundColor = '#f0f0f0';
-        }
-    });
-    // Fill prepared/checked by from Visit 1
-    if (visitNum === 1) {
-        if (data.prepared_by) document.getElementById('prepared_by').value = data.prepared_by;
-        if (data.checked_by) document.getElementById('checked_by').value = data.checked_by;
-    }
-}
-
-
-
-// Load Step 3 Entries (Refactored for 3 Categories)
-async function loadStep3Entries(data) {
-    const solId = document.getElementById('sol_id').value;
-    const visitNo = document.getElementById('visit_no').value;
-    
-    // 1. Work Progress
-    const wCount = parseInt(data.work_count) || 0;
-    document.getElementById('workProgressContainer').innerHTML = '';
-    workCount = 0;
-    for(let i=0; i<wCount; i++) {
-        addWorkEntry();
-        document.querySelector(`[name="work_milestone_${i}"]`).value = data[`work_milestone_${i}`] || '';
-        document.querySelector(`[name="work_desc_${i}"]`).value = data[`work_desc_${i}`] || '';
-        document.querySelector(`[name="work_remark_${i}"]`).value = data[`work_remark_${i}`] || '';
-    }
-
-    // 2. Quality
-    const qCount = parseInt(data.quality_count) || 0;
-    document.getElementById('qualityContainer').innerHTML = '';
-    qualityCount = 0;
-    for(let i=0; i<qCount; i++) {
-        addQualityEntry();
-        document.querySelector(`[name="qual_item_${i}"]`).value = data[`qual_item_${i}`] || '';
-        document.querySelector(`[name="qual_desc_${i}"]`).value = data[`qual_desc_${i}`] || '';
-        document.querySelector(`[name="qual_remark_${i}"]`).value = data[`qual_remark_${i}`] || '';
-    }
-
-    // 3. Make/Model
-    const mCount = parseInt(data.make_count) || 0;
-    document.getElementById('makeModelContainer').innerHTML = '';
-    makeCount = 0;
-    for(let i=0; i<mCount; i++) {
-        addMakeModelEntry();
-        document.querySelector(`[name="make_item_${i}"]`).value = data[`make_item_${i}`] || '';
-        document.querySelector(`[name="make_observed_${i}"]`).value = data[`make_observed_${i}`] || '';
-        document.querySelector(`[name="make_remark_${i}"]`).value = data[`make_remark_${i}`] || '';
-    }
-    
-    // ✅ NOW LOAD IMAGES
-    await loadImagesFromFirebase(solId, visitNo);
-}
-// Function to load images from Firebase
-async function loadImagesFromFirebase(sol_id, visit_no) {
-    const categories = [
-        { type: 'work', count: workCount },
-        { type: 'qual', count: qualityCount },
-        { type: 'make', count: makeCount }
-    ];
-    
-    for (const category of categories) {
-        for (let i = 0; i < category.count; i++) {
-            try {
-                const response = await fetch('/get-image-from-firebase', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sol_id: sol_id,
-                        visit_no: visit_no,
-                        image_type: category.type,
-                        image_index: i
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.image_base64) {
-                        // Set the cropped result
-                        const cropInput = document.getElementById(`${category.type}_crop_result_${i}`);
-                        if (cropInput) {
-                            cropInput.value = `data:image/jpeg;base64,${data.image_base64}`;
-                        }
-                        
-                        // Show preview
-                        const previewImg = document.getElementById(`${category.type}_preview_${i}`);
-                        const previewContainer = document.getElementById(`${category.type}_preview_container_${i}`);
-                        const statusDiv = document.getElementById(`${category.type}_file_status_${i}`);
-                        
-                        if (previewImg && previewContainer) {
-                            previewImg.src = `data:image/jpeg;base64,${data.image_base64}`;
-                            previewContainer.style.display = 'block';
-                            if (statusDiv) statusDiv.style.display = 'block';
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error(`Error loading ${category.type} image ${i}:`, error);
-            }
-        }
-    }
-}
-/* =========================================
-   8. FORM SUBMISSION (GENERATE REPORT)
-   ========================================= */
-async function generateAndDownload() {
-    // 1. Basic Validation on Step 4
-    const section4 = document.getElementById('section4');
-    const required = section4.querySelectorAll('[required]');
-    let valid = true;
-    required.forEach(el => {
-        if(!el.value) { valid = false; el.style.borderColor = 'red'; }
-    });
-    if(!valid) { showAlert("Please fill required fields", "warning"); return; }
-
-    const loader = document.getElementById('loadingOverlay');
-    if(loader) loader.classList.add('show');
-
-    // 2. Construct FormData
-    const formData = new FormData();
-    const form = document.getElementById('reportForm');
-    
-    // Add standard inputs (excluding file inputs and deleted entry markers)
-    const inputs = form.querySelectorAll('input:not([type="file"]):not([name*="_deleted_"]), select, textarea');
-    inputs.forEach(input => {
-        if (input.name) formData.append(input.name, input.value || '');
-    });
-
-    // We'll set counts after processing (to get actual counts after deletions)
-    formData.append('other_count', otherCount);
-
-    // 3. Helper to Process Categories (with delete handling)
-    async function processCategory(type, count, prefixes) {
-        let actualCount = 0; // Track actual non-deleted entries
-        
-        for (let i = 0; i < count; i++) {
-            // ✅ CHECK IF ENTRY IS DELETED
-            const isDeleted = document.querySelector(`[name="${type}_deleted_${i}"]`);
-            if (isDeleted && isDeleted.value === 'true') {
-                console.log(`Skipping deleted ${type} entry ${i}`);
-                continue; // Skip deleted entries
-            }
-            
-            // Check if entry has any data
-            const valB = document.querySelector(`[name="${type}_${prefixes.b}_${i}"]`)?.value || '';
-            const valC = document.querySelector(`[name="${type}_${prefixes.c}_${i}"]`)?.value || '';
-            const valE = document.querySelector(`[name="${type}_${prefixes.e}_${i}"]`)?.value || '';
-
-            // Only process if there's actual data
-            if (valB || valC || valE) {
-                // Use actualCount for sequential numbering (0, 1, 2...)
-                formData.append(`${type}_${prefixes.b}_${actualCount}`, valB);
-                formData.append(`${type}_${prefixes.c}_${actualCount}`, valC);
-                formData.append(`${type}_${prefixes.e}_${actualCount}`, valE);
-
-                // Image Data
-                const base64Data = document.getElementById(`${type}_crop_result_${i}`)?.value;
-                if (base64Data) {
-                    try {
-                        const res = await fetch(base64Data);
-                        const blob = await res.blob();
-                        formData.append(`${type}_image_${actualCount}`, blob, `${type}_${actualCount}.jpg`);
-                    } catch (err) {
-                        console.error(`Error processing ${type} image ${i}:`, err);
-                        // Continue processing other images even if one fails
-                    }
-                }
-                
-                actualCount++; // Increment only for non-deleted entries with data
-            }
-        }
-        
-        return actualCount; // Return the actual count of non-deleted entries
-    }
-
-    // Process Work Progress (milestone, desc, remark)
-    const actualWorkCount = await processCategory('work', workCount, { b: 'milestone', c: 'desc', e: 'remark' });
-    formData.set('work_count', actualWorkCount); // Set actual count
-    console.log(`Work Progress: ${actualWorkCount} entries`);
-    
-    // Process Quality (item, desc, remark)
-    const actualQualityCount = await processCategory('qual', qualityCount, { b: 'item', c: 'desc', e: 'remark' });
-    formData.set('quality_count', actualQualityCount);
-    console.log(`Quality: ${actualQualityCount} entries`);
-    
-    // Process Make/Model (item, observed, remark)
-    const actualMakeCount = await processCategory('make', makeCount, { b: 'item', c: 'observed', e: 'remark' });
-    formData.set('make_count', actualMakeCount);
-    console.log(`Make/Model: ${actualMakeCount} entries`);
-
-    // 4. Send to Backend
-    try {
-        const response = await fetch('/generate-report', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Draft_Report_${document.getElementById('sol_id').value}.xlsx`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-
-            // Move to Section 5
-            document.getElementById('section4').classList.remove('active');
-            document.getElementById('section5').classList.add('active');
-            updateSteps(5); 
-            window.scrollTo(0, 0);
-        } else {
-            const text = await response.text();
-            alert('Error: ' + text);
-        }
-    } catch (error) {
-        alert('Network Error: ' + error.message);
-    } finally {
-        if(loader) loader.classList.remove('show');
     }
 }
 
@@ -1911,88 +1631,1081 @@ function renumberEntries(type) {
 }
 
 /* =========================================
-   9. FINAL UPLOAD LOGIC (STEP 5)
+   CROPPER LOGIC
    ========================================= */
-function handleFileSelect(input) {
-    const file = input.files[0];
-    if (file) {
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileInfo').style.display = 'block';
-        
-        const btn = document.getElementById('uploadBtn');
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.style.background = '#28a745';
+function initCropper(type, index) {
+    currentCropType = type;
+    currentCropIndex = index;
+    const input = document.getElementById(`${type}_file_${index}`);
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = document.getElementById('imageToCrop');
+            img.src = e.target.result;
+            
+            document.getElementById('cropModal').classList.add('show');
+            
+            if (cropper) cropper.destroy();
+            
+            cropper = new Cropper(img, {
+                aspectRatio: 430 / 320,
+                viewMode: 1,
+                autoCropArea: 1
+            });
+        };
+        reader.readAsDataURL(input.files[0]);
     }
 }
 
-async function uploadFinalReport() {
-    const file = document.getElementById('finalExcelUpload').files[0];
-    if (!file) return alert("Please select a file");
-    if(!confirm("Upload this as the FINAL report?")) return;
+function saveCrop() {
+    if (!cropper) return;
+    
+    const canvas = cropper.getCroppedCanvas({
+        width: 430,
+        height: 320
+    });
+    
+    const base64Data = canvas.toDataURL('image/jpeg', 0.9);
+    
+    document.getElementById(`${currentCropType}_crop_result_${currentCropIndex}`).value = base64Data;
+    
+    const previewImg = document.getElementById(`${currentCropType}_preview_${currentCropIndex}`);
+    const previewContainer = document.getElementById(`${currentCropType}_preview_container_${currentCropIndex}`);
+    const statusDiv = document.getElementById(`${currentCropType}_file_status_${currentCropIndex}`);
+    
+    previewImg.src = base64Data;
+    previewContainer.style.display = 'block';
+    statusDiv.style.display = 'block';
+    
+    closeCropper();
+    showAlert('Image cropped successfully!', 'info');
+}
 
-    document.getElementById('loadingOverlay').classList.add('show');
+function closeCropper() {
+    document.getElementById('cropModal').classList.remove('show');
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    if (currentCropType && currentCropIndex !== null) {
+        const resultVal = document.getElementById(`${currentCropType}_crop_result_${currentCropIndex}`).value;
+        if (!resultVal) {
+            document.getElementById(`${currentCropType}_file_${currentCropIndex}`).value = "";
+        }
+    }
+}
+
+/* =========================================
+   EXISTING DATA HANDLING
+   ========================================= */
+async function checkExistingData() {
+    const solId = document.getElementById('sol_id').value;
+    const visitNo = document.getElementById('visit_no').value;
+    
+    if (!solId || !visitNo) return;
+    
+    try {
+        const response = await fetch('/check-existing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sol_id: solId, visit_no: visitNo })
+        });
+        const result = await response.json();
+
+        const currentVisit = parseInt(visitNo);
+        for (let v = 1; v < currentVisit; v++) {
+            const prevResponse = await fetch('/check-existing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sol_id: solId, visit_no: v.toString() })
+            });
+            const prevResult = await prevResponse.json();
+            if (prevResult.exists && prevResult.data) {
+                fillPreviousVisitData(prevResult.data, v);
+            }
+        }
+
+        if (result.exists && result.data) {
+            if (confirm('Existing data found for Visit ' + visitNo + '. Load and edit?')) {
+                fillCurrentVisitData(result.data);
+                await loadStep3Entries(result.data);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking existing data:', error);
+    }
+}
+
+function fillCurrentVisitData(data) {
+    for (let key in data) {
+        const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+        if (element) {
+            element.value = data[key];
+        }
+    }
+    const count = parseInt(data.other_count) || 0;
+    document.getElementById('othersContainer').innerHTML = '';
+    otherCount = 0;
+    for(let i=0; i<count; i++) {
+        addOtherEntry();
+        document.querySelector(`input[name="other_item_${i}"]`).value = data[`other_item_${i}`] || '';
+        for(let v=1; v<=4; v++) {
+            document.querySelector(`input[name="other_item_${i}_visit${v}"]`).value = data[`other_item_${i}_visit${v}`] || '';
+        }
+        document.querySelector(`input[name="other_item_${i}_remark"]`).value = data[`other_item_${i}_remark`] || '';
+    }
+}
+
+function fillPreviousVisitData(data, visitNum) {
+    const inputs = document.querySelectorAll(`input[name$="_visit${visitNum}"]`);
+    inputs.forEach(input => {
+        const name = input.name; 
+        if (data[name]) {
+            input.value = data[name];
+            input.readOnly = true;
+            input.style.backgroundColor = '#f0f0f0';
+        }
+    });
+    if (visitNum === 1) {
+        if (data.prepared_by) document.getElementById('prepared_by').value = data.prepared_by;
+        if (data.checked_by) document.getElementById('checked_by').value = data.checked_by;
+    }
+}
+
+async function loadStep3Entries(data) {
+    const solId = document.getElementById('sol_id').value;
+    const visitNo = document.getElementById('visit_no').value;
+    
+    const wCount = parseInt(data.work_count) || 0;
+    document.getElementById('workProgressContainer').innerHTML = '';
+    workCount = 0;
+    for(let i=0; i<wCount; i++) {
+        addWorkEntry();
+        document.querySelector(`[name="work_milestone_${i}"]`).value = data[`work_milestone_${i}`] || '';
+        document.querySelector(`[name="work_desc_${i}"]`).value = data[`work_desc_${i}`] || '';
+        document.querySelector(`[name="work_remark_${i}"]`).value = data[`work_remark_${i}`] || '';
+    }
+
+    const qCount = parseInt(data.quality_count) || 0;
+    document.getElementById('qualityContainer').innerHTML = '';
+    qualityCount = 0;
+    for(let i=0; i<qCount; i++) {
+        addQualityEntry();
+        document.querySelector(`[name="qual_item_${i}"]`).value = data[`qual_item_${i}`] || '';
+        document.querySelector(`[name="qual_desc_${i}"]`).value = data[`qual_desc_${i}`] || '';
+        document.querySelector(`[name="qual_remark_${i}"]`).value = data[`qual_remark_${i}`] || '';
+    }
+
+    const mCount = parseInt(data.make_count) || 0;
+    document.getElementById('makeModelContainer').innerHTML = '';
+    makeCount = 0;
+    for(let i=0; i<mCount; i++) {
+        addMakeModelEntry();
+        document.querySelector(`[name="make_item_${i}"]`).value = data[`make_item_${i}`] || '';
+        document.querySelector(`[name="make_observed_${i}"]`).value = data[`make_observed_${i}`] || '';
+        document.querySelector(`[name="make_remark_${i}"]`).value = data[`make_remark_${i}`] || '';
+    }
+    
+    await loadImagesFromFirebase(solId, visitNo);
+}
+
+async function loadImagesFromFirebase(sol_id, visit_no) {
+    const categories = [
+        { type: 'work', count: workCount },
+        { type: 'qual', count: qualityCount },
+        { type: 'make', count: makeCount }
+    ];
+    
+    for (const category of categories) {
+        for (let i = 0; i < category.count; i++) {
+            try {
+                const response = await fetch('/get-image-from-firebase', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sol_id: sol_id,
+                        visit_no: visit_no,
+                        image_type: category.type,
+                        image_index: i
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.image_base64) {
+                        const cropInput = document.getElementById(`${category.type}_crop_result_${i}`);
+                        if (cropInput) {
+                            cropInput.value = `data:image/jpeg;base64,${data.image_base64}`;
+                        }
+                        
+                        const previewImg = document.getElementById(`${category.type}_preview_${i}`);
+                        const previewContainer = document.getElementById(`${category.type}_preview_container_${i}`);
+                        const statusDiv = document.getElementById(`${category.type}_file_status_${i}`);
+                        
+                        if (previewImg && previewContainer) {
+                            previewImg.src = `data:image/jpeg;base64,${data.image_base64}`;
+                            previewContainer.style.display = 'block';
+                            if (statusDiv) statusDiv.style.display = 'block';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(`Error loading ${category.type} image ${i}:`, error);
+            }
+        }
+    }
+}
+
+/* =========================================
+   FORM SUBMISSION (GENERATE REPORT)
+   ========================================= */
+async function generateAndDownload() {
+    const section4 = document.getElementById('section4');
+    const required = section4.querySelectorAll('[required]');
+    let valid = true;
+    required.forEach(el => {
+        if(!el.value) { valid = false; el.style.borderColor = 'red'; }
+    });
+    if(!valid) { showAlert("Please fill required fields", "warning"); return; }
+
+    const loader = document.getElementById('loadingOverlay');
+    if(loader) loader.classList.add('show');
+
+    const formData = new FormData();
+    const form = document.getElementById('reportForm');
+    
+    const inputs = form.querySelectorAll('input:not([type="file"]):not([name*="_deleted_"]), select, textarea');
+    inputs.forEach(input => {
+        if (input.name) formData.append(input.name, input.value || '');
+    });
+
+    formData.append('other_count', otherCount);
+
+    async function processCategory(type, count, prefixes) {
+        let actualCount = 0;
+        
+        for (let i = 0; i < count; i++) {
+            const isDeleted = document.querySelector(`[name="${type}_deleted_${i}"]`);
+            if (isDeleted && isDeleted.value === 'true') continue;
+            
+            const valB = document.querySelector(`[name="${type}_${prefixes.b}_${i}"]`)?.value || '';
+            const valC = document.querySelector(`[name="${type}_${prefixes.c}_${i}"]`)?.value || '';
+            const valE = document.querySelector(`[name="${type}_${prefixes.e}_${i}"]`)?.value || '';
+
+            if (valB || valC || valE) {
+                formData.append(`${type}_${prefixes.b}_${actualCount}`, valB);
+                formData.append(`${type}_${prefixes.c}_${actualCount}`, valC);
+                formData.append(`${type}_${prefixes.e}_${actualCount}`, valE);
+
+                const base64Data = document.getElementById(`${type}_crop_result_${i}`)?.value;
+                if (base64Data) {
+                    try {
+                        const res = await fetch(base64Data);
+                        const blob = await res.blob();
+                        formData.append(`${type}_image_${actualCount}`, blob, `${type}_${actualCount}.jpg`);
+                    } catch (err) {
+                        console.error(`Error processing ${type} image ${i}:`, err);
+                    }
+                }
+                
+                actualCount++;
+            }
+        }
+        
+        return actualCount;
+    }
+
+    const actualWorkCount = await processCategory('work', workCount, { b: 'milestone', c: 'desc', e: 'remark' });
+    formData.set('work_count', actualWorkCount);
+    
+    const actualQualityCount = await processCategory('qual', qualityCount, { b: 'item', c: 'desc', e: 'remark' });
+    formData.set('quality_count', actualQualityCount);
+    
+    const actualMakeCount = await processCategory('make', makeCount, { b: 'item', c: 'observed', e: 'remark' });
+    formData.set('make_count', actualMakeCount);
+
+    try {
+        const response = await fetch('/generate-report', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Draft_Report_${document.getElementById('sol_id').value}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+
+            document.getElementById('section4').classList.remove('active');
+            document.getElementById('section5').classList.add('active');
+            
+            document.getElementById('sol_id_confirm').value = document.getElementById('sol_id').value;
+            document.getElementById('visit_no_confirm').value = document.getElementById('visit_no').value;
+            
+            updateSteps(5);
+            window.scrollTo(0, 0);
+        } else {
+            const text = await response.text();
+            alert('Error: ' + text);
+        }
+    } catch (error) {
+        alert('Network Error: ' + error.message);
+    } finally {
+        if(loader) loader.classList.remove('show');
+    }
+}
+
+/* =========================================
+   REGION & REVIEWER SELECTION (STEP 5)
+   ========================================= */
+async function loadReviewers() {
+    const region = document.getElementById('region_select').value;
+    const reviewerSelect = document.getElementById('reviewer_select');
+    
+    if (!region) {
+        reviewerSelect.disabled = true;
+        reviewerSelect.innerHTML = '<option value="">First select a region</option>';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/get-reviewers', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({region: region})
+        });
+        
+        const data = await response.json();
+        
+        if (data.reviewers) {
+            reviewerSelect.disabled = false;
+            reviewerSelect.innerHTML = '<option value="">Select Reviewer</option>';
+            
+            data.reviewers.forEach(reviewer => {
+                const option = document.createElement('option');
+                option.value = reviewer.email;
+                option.textContent = reviewer.name;
+                reviewerSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading reviewers:', error);
+        alert('Error loading reviewers');
+    }
+}
+
+function handleReviewFileSelect(input) {
+    const file = input.files[0];
+    if (file) {
+        document.getElementById('reviewFileName').textContent = file.name;
+        document.getElementById('reviewFileInfo').style.display = 'block';
+        
+        const btn = document.getElementById('submitReviewBtn');
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }
+}
+
+async function submitForReview() {
+    const region = document.getElementById('region_select').value;
+    const reviewerEmail = document.getElementById('reviewer_select').value;
+    const userEmail = document.getElementById('user_email_input').value;
+    const userName = document.getElementById('user_name_input').value;
+    const solId = document.getElementById('sol_id_confirm').value;
+    const visitNo = document.getElementById('visit_no_confirm').value;
+    const file = document.getElementById('reviewExcelUpload').files[0];
+    const customFilename = document.getElementById('custom_filename').value.trim();
+    const userComments = document.getElementById('user_comments').value.trim(); // ✅ NEW
+    
+    if (!region || !reviewerEmail || !userEmail || !userName || !file) {
+        alert('Please fill all required fields and upload the Excel file');
+        return;
+    }
     
     const formData = new FormData();
     formData.append('excel_file', file);
-    formData.append('sol_id', document.getElementById('sol_id').value);
-    formData.append('visit_no', document.getElementById('visit_no').value);
-    formData.append('project_name', document.getElementById('project_name').value);
-
+    formData.append('region', region);
+    formData.append('reviewer_email', reviewerEmail);
+    formData.append('user_email', userEmail);
+    formData.append('user_name', userName);
+    formData.append('sol_id', solId);
+    formData.append('visit_no', visitNo);
+    formData.append('custom_filename', customFilename);
+    formData.append('user_comments', userComments); // ✅ NEW: Send comments
+    
     try {
-        const res = await fetch('/upload-final-report', {method: 'POST', body: formData});
-        if(res.ok) {
-            document.getElementById('loadingOverlay').classList.remove('show');
-            // Render Success Message
-            document.getElementById('section5').innerHTML = `
-                <div class="section-header">
-                    <span>✅</span><h2>Report Saved Successfully!</h2>
+        const response = await fetch('/submit-for-review', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Successfully submitted for review!');
+            showReviewDashboard();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Network error: ' + error.message);
+    }
+}
+function goBackToStep4() {
+    document.getElementById('section5').classList.remove('active');
+    document.getElementById('section4').classList.add('active');
+    updateSteps(4);
+    window.scrollTo(0, 0);
+}
+
+/* =========================================
+   REVIEW DASHBOARD (SECTION 6)
+   ========================================= */
+function showReviewDashboard() {
+    // Hide all sections
+    for (let i = 1; i <= 5; i++) {
+        document.getElementById(`section${i}`).classList.remove('active');
+    }
+    
+    // Show section 6
+    document.getElementById('section6').classList.add('active');
+    
+    // Load user's approved count
+    loadUserApprovedCount();
+    
+    // Show pending reviews by default
+    showPendingReviews();
+    
+    window.scrollTo(0, 0);
+}
+
+async function loadUserApprovedCount() {
+    try {
+        const response = await fetch('/get-user-count', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                user_email: currentUserEmail,
+                region: currentRegion
+            })
+        });
+        
+        const data = await response.json();
+        document.getElementById('userApprovedCount').textContent = data.count || 0;
+    } catch (error) {
+        console.error('Error loading count:', error);
+    }
+}
+
+async function showPendingReviews() {
+    const container = document.getElementById('reviewsContainer');
+    container.innerHTML = '<div style="text-align:center; padding:40px;"><div class="spinner"></div><p>Loading...</p></div>';
+    
+    try {
+        // Determine if user is reviewer or regular user
+        const isReviewer = checkIfReviewer(currentUserEmail);
+        
+        const response = await fetch('/get-pending-reviews', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                user_email: currentUserEmail,
+                region: currentRegion,
+                user_type: isReviewer ? 'reviewer' : 'user'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.reviews && data.reviews.length > 0) {
+            let html = '<h3 style="color: #ff9800; margin-bottom: 20px;">⏳ Pending Reviews</h3>';
+            
+            data.reviews.forEach(review => {
+                html += `
+                    <div style="background: white; border: 2px solid #ff9800; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h4 style="color: #667eea; margin: 0;">SOL ID: ${review.sol_id} | Visit: ${review.visit_no}</h4>
+                                <p style="margin: 10px 0;">📤 Submitted by: <strong>${review.user_name}</strong> (${review.user_email})</p>
+                                <p style="margin: 5px 0;">📅 Submitted: ${new Date(review.submitted_at).toLocaleString()}</p>
+                                ${isReviewer ? `<p style="margin: 5px 0;">📧 Reviewer: <strong>You</strong></p>` : `<p style="margin: 5px 0;">👤 Reviewer: ${review.reviewer_email}</p>`}
+                                
+                                ${review.user_comments ? `
+                                    <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #ffc107;">
+                                        <strong style="color: #856404;">💬 Submitter Comments:</strong>
+                                        <p style="margin: 5px 0 0 0; color: #856404;">${review.user_comments}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <span style="background: #ff9800; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; white-space: nowrap;">PENDING</span>
+                        </div>
+                        
+                        <div style="margin-top: 20px; display: flex; gap: 15px;">
+                            <button class="btn btn-primary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
+                                📥 Download Excel
+                            </button>
+                            
+                            ${isReviewer ? `
+                                <button class="btn" style="background: #28a745; color: white;" onclick="openReviewModal('${review.session_id}', '${review.region}', '${review.sol_id}', '${review.visit_no}')">
+                                    ✅ Process Review
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div style="text-align:center; padding:60px; color:#999;"><h3>No pending reviews</h3></div>';
+        }
+    } catch (error) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:red;">Error loading reviews</div>';
+    }
+}
+
+async function showCompletedReviews() {
+    const container = document.getElementById('reviewsContainer');
+    container.innerHTML = '<div style="text-align:center; padding:40px;"><div class="spinner"></div><p>Loading...</p></div>';
+    
+    try {
+        const isReviewer = checkIfReviewer(currentUserEmail);
+        
+        const response = await fetch('/get-completed-reviews', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                user_email: currentUserEmail,
+                region: currentRegion,
+                user_type: isReviewer ? 'reviewer' : 'user'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.reviews && data.reviews.length > 0) {
+            let html = '<h3 style="color: #28a745; margin-bottom: 20px;">✅ Completed Reviews</h3>';
+            
+            data.reviews.forEach(review => {
+                const isApproved = review.status === 'approved';
+                
+                html += `
+                    <div style="background: white; border: 2px solid ${isApproved ? '#28a745' : '#dc3545'}; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                            <div style="flex: 1;">
+                                <h4 style="color: #667eea; margin: 0;">SOL ID: ${review.sol_id} | Visit: ${review.visit_no}</h4>
+                                <p style="margin: 10px 0;">📤 Submitted by: <strong>${review.user_name}</strong></p>
+                                <p style="margin: 5px 0;">✅ Reviewed: ${new Date(review.reviewed_at).toLocaleString()}</p>
+                                
+                                ${review.review_code ? `
+                                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                        <strong style="font-size: 1.2em;">Review Code: ${review.review_code}</strong>
+                                    </div>
+                                ` : ''}
+                                
+                                ${review.reviewer_comments ? `
+                                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                        <strong>💬 Reviewer Comments:</strong>
+                                        <p style="margin: 10px 0 0 0;">${review.reviewer_comments}</p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            
+                            <span style="background: ${isApproved ? '#28a745' : '#dc3545'}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold;">
+                                ${isApproved ? '✅ APPROVED' : '❌ REJECTED'}
+                            </span>
+                        </div>
+                        
+                        <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'completed')">
+                                📥 Download Original
+                            </button>
+                            
+                            ${review.corrected_file_path ? `
+                                <button class="btn btn-secondary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'corrected', 'completed')">
+                                    📥 Download Corrected
+                                </button>
+                            ` : ''}
+                            
+                            ${isApproved ? `
+                                <button class="btn" style="background: #667eea; color: white;" onclick="downloadFromFirebase('${review.region}', '${review.sol_id}', '${review.visit_no}')">
+                                    ☁️ Download from Firebase
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div style="text-align:center; padding:60px; color:#999;"><h3>No completed reviews</h3></div>';
+        }
+    } catch (error) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:red;">Error loading reviews</div>';
+    }
+}
+
+async function showAllApprovedReports() {
+    const container = document.getElementById('reviewsContainer');
+    container.innerHTML = '<div style="text-align:center; padding:40px;"><div class="spinner"></div><p>Loading...</p></div>';
+    
+    try {
+        const response = await fetch('/get-all-approved-reports', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                region: currentRegion
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.reports && data.reports.length > 0) {
+            let html = `
+                <h3 style="color: #667eea; margin-bottom: 20px;">📁 All Approved Reports - ${currentRegion} Region</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            `;
+            
+            data.reports.forEach(report => {
+                html += `
+                    <div style="background: white; border: 2px solid #667eea; border-radius: 12px; padding: 20px; text-align: center;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">📊</div>
+                        <h4 style="color: #667eea; margin: 10px 0;">SOL ID: ${report.sol_id}</h4>
+                        <p style="color: #666; margin: 5px 0;">Visit: ${report.visit_no}</p>
+                        <a href="${report.download_url}" download="${report.filename}" class="btn btn-primary" style="margin-top: 15px; text-decoration: none; display: inline-block;">
+                            📥 Download
+                        </a>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = '<div style="text-align:center; padding:60px; color:#999;"><h3>No approved reports available</h3></div>';
+        }
+    } catch (error) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:red;">Error loading reports</div>';
+    }
+}
+
+function checkIfReviewer(email) {
+    // Check if email exists in any region's reviewer list
+    for (const region in REGION_REVIEWERS) {
+        if (REGION_REVIEWERS[region].some(r => r.email === email)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Define REGION_REVIEWERS constant in JavaScript
+const REGION_REVIEWERS = {
+    'West': [
+        {email: 'richarddsilva@company.com', name: 'Richard Dsilva'},
+        {email: 'abhaypatwa@company.com', name: 'Abhay Patwa'},
+        {email: 'niwantghadge@company.com', name: 'Niwant Ghadge'},
+        {email: 'chaman.gotya@cushwake.com', name: 'Chaman Gotya'}
+    ],
+    'East': [
+        {email: 'subhomoybhakat@company.com', name: 'Subhomoy Bhakat'},
+        {email: 'dipayansutar@company.com', name: 'Dipayan Sutar'},
+        {email: 'souryabratachatterjee@company.com', name: 'Sourya Chatterjee'}
+    ],
+    'South': [
+        {email: 'adhithyaram@company.com', name: 'Adithyaraman Natarajan'},
+        {email: 'arjunkumarm@company.com', name: 'Arjun Kumar M'}
+    ],
+    'North': [
+        {email: 'marufkhan@company.com', name: 'Maruf Khan'},
+        {email: 'amandeepmaurya@company.com', name: 'Amandeep Mourya'}
+    ]
+};
+
+async function downloadReviewFile(sessionId, region, fileType, status) {
+    try {
+        const response = await fetch('/download-review-file', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                session_id: sessionId,
+                region: region,
+                file_type: fileType,
+                status: status
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${fileType}_${sessionId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            alert('Error downloading file');
+        }
+    } catch (error) {
+        alert('Network error: ' + error.message);
+    }
+}
+
+async function downloadFromFirebase(region, solId, visitNo) {
+    const url = `https://storage.googleapis.com/ai-based-review-tools.firebasestorage.app/ICICI_Site_Progress_Report/${region}/${solId}/Visit_${visitNo}/report.xlsx`;
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${solId}_Visit_${visitNo}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function openReviewModal(sessionId, region, solId, visitNo) {
+    // Create modal HTML
+    const modalHTML = `
+        <div id="reviewDecisionModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 15px; padding: 30px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+                <h2 style="color: #667eea; margin-bottom: 20px;">Review Decision</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <p><strong>SOL ID:</strong> ${solId}</p>
+                    <p><strong>Visit No:</strong> ${visitNo}</p>
                 </div>
-                <div style="text-align: center; padding: 60px; background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); border-radius: 15px;">
-                    <div style="font-size: 5em; margin-bottom: 20px;">🎉</div>
-                    <h2 style="color: #155724;">Report Uploaded to Database!</h2>
-                    <button class="btn btn-primary" onclick="location.reload()" style="margin-top: 20px;">
-                        ➕ Create Another Report
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Decision *</label>
+                    <select id="reviewDecision" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                        <option value="">Select Decision</option>
+                        <option value="approved">✅ Good to Go</option>
+                        <option value="rejected">❌ Major errors - please review again</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Comments <span id="commentRequired" style="color: red; display: none;">*</span></label>
+                    <textarea id="reviewComments" placeholder="Enter your comments..." style="width: 100%; min-height: 100px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; resize: vertical;"></textarea>
+                </div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px;">Upload Corrected Excel (Optional)</label>
+                    <input type="file" id="correctedExcelFile" accept=".xlsx,.xls" style="width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 8px;">
+                </div>
+                
+                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitReviewDecision('${sessionId}', '${region}', '${solId}', '${visitNo}')" style="background: #28a745 !important;">
+                        Submit Review
                     </button>
                 </div>
-            `;
-            window.scrollTo(0, 0);
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // Add event listener to decision dropdown
+    document.getElementById('reviewDecision').addEventListener('change', function() {
+        const commentRequired = document.getElementById('commentRequired');
+        if (this.value === 'rejected') {
+            commentRequired.style.display = 'inline';
         } else {
-            alert("Error: " + await res.text());
+            commentRequired.style.display = 'none';
         }
-    } catch(e) {
-        alert("Error: " + e.message);
-    } finally {
-        if(document.getElementById('loadingOverlay')) {
-            document.getElementById('loadingOverlay').classList.remove('show');
-        }
+    });
+}
+
+function closeReviewModal() {
+    const modal = document.getElementById('reviewDecisionModal');
+    if (modal) {
+        modal.remove();
     }
 }
 
-function goBackToEdit() {
-    if (confirm('Going back will require you to regenerate the report. Continue?')) {
-        document.getElementById('section5').classList.remove('active');
-        document.getElementById('section4').classList.add('active');
-        updateSteps(4);
-        window.scrollTo(0, 0);
+async function submitReviewDecision(sessionId, region, solId, visitNo) {
+    const decision = document.getElementById('reviewDecision').value;
+    const comments = document.getElementById('reviewComments').value.trim();
+    const correctedFile = document.getElementById('correctedExcelFile').files[0];
+    
+    if (!decision) {
+        alert('Please select a decision');
+        return;
+    }
+    
+    if (decision === 'rejected' && !comments) {
+        alert('Comments are required for rejection');
+        return;
+    }
+    
+    let correctedFileData = null;
+    
+    if (correctedFile) {
+        correctedFileData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(correctedFile);
+        });
+    }
+    
+    try {
+        const response = await fetch('/submit-review-decision', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                session_id: sessionId,
+                region: region,
+                decision: decision,
+                comments: comments,
+                reviewer_email: currentUserEmail,
+                corrected_file: correctedFileData
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            closeReviewModal();
+            
+            if (decision === 'approved') {
+                alert(`✅ Review approved successfully!\n\nReview Code: ${result.review_code}`);
+            } else {
+                alert('❌ Review submitted. User will be notified to make corrections.');
+            }
+            
+            // Refresh pending reviews
+            showPendingReviews();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    } catch (error) {
+        alert('Network error: ' + error.message);
     }
 }
 
-function clearForm() {
-    // Reset standard inputs
-    const inputs = document.querySelectorAll('input:not(#sol_id):not(#project_name):not(#visit_no), textarea');
-    inputs.forEach(i => i.value = '');
+function goBackToHome() {
+    // Reset to section 1
+    for (let i = 1; i <= 6; i++) {
+        document.getElementById(`section${i}`).classList.remove('active');
+    }
     
-    // Reset specific containers
-    document.getElementById('workProgressContainer').innerHTML = ''; workCount = 0;
-    document.getElementById('qualityContainer').innerHTML = ''; qualityCount = 0;
-    document.getElementById('makeModelContainer').innerHTML = ''; makeCount = 0;
+    document.getElementById('section1').classList.add('active');
+    updateSteps(1);
+    updateProgress(25);
     
-    // Add initial empty rows
+    // Reset form
+    document.getElementById('reportForm').reset();
+    
+    // Clear dynamic entries
+    document.getElementById('othersContainer').innerHTML = '';
+    document.getElementById('workProgressContainer').innerHTML = '';
+    document.getElementById('qualityContainer').innerHTML = '';
+    document.getElementById('makeModelContainer').innerHTML = '';
+    
+    // Re-add default entries
+    otherCount = 0;
+    workCount = 0;
+    qualityCount = 0;
+    makeCount = 0;
+    
     addWorkEntry();
     addQualityEntry();
     addMakeModelEntry();
+    
+    window.scrollTo(0, 0);
 }
+
+// Add modal close function
+function closeModal() {
+    const modal = document.getElementById('existingDataModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Check URL parameters for direct dashboard access
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get('email');
+    const region = urlParams.get('region');
+    
+    if (email && region) {
+        currentUserEmail = email;
+        currentRegion = region;
+        showReviewDashboard();
+    }
+});
+
+function openReviewsFromHome() {
+    // ✅ Check if user is already logged in
+    if (currentUserEmail) {
+        // User detected, go directly to dashboard
+        console.log('✅ User auto-detected:', currentUserEmail);
+        showReviewDashboard();
+        return;
+    }
+    
+    // ✅ No user detected, show modal
+    const modalHTML = `
+        <div id="reviewAccessModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%;">
+                <h2 style="color: #667eea; margin-bottom: 20px;">Access Review Dashboard</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Your Email *</label>
+                    <input type="email" id="accessEmail" placeholder="your.email@company.com" value="${currentUserEmail || ''}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;" oninput="checkReviewerStatus()">
+                </div>
+                
+                <div id="regionSelectionDiv" style="margin-bottom: 20px; display: none;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Select Region *</label>
+                    <select id="accessRegion" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;" onchange="enableAccessButton()">
+                        <option value="">Choose Region</option>
+                        <option value="West">West</option>
+                        <option value="East">East</option>
+                        <option value="South">South</option>
+                        <option value="North">North</option>
+                    </select>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">⚠️ Note: You're a user. Select region to view your submissions.</p>
+                </div>
+                
+                <div id="reviewerInfo" style="display: none; background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="color: #2e7d32; font-weight: bold; margin: 0;">✅ Reviewer Detected</p>
+                    <p style="color: #2e7d32; margin: 5px 0 0 0; font-size: 0.95em;">Region: <strong id="detectedRegion"></strong></p>
+                    <p style="color: #666; margin: 5px 0 0 0; font-size: 0.85em;">You'll see reviews assigned to you.</p>
+                </div>
+                
+                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
+                    <button class="btn btn-secondary" onclick="closeReviewAccessModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="accessReviewDashboard()" id="accessDashboardBtn" disabled style="opacity: 0.5;">Access Dashboard</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    // ✅ Auto-check status if email already in localStorage
+    if (currentUserEmail) {
+        setTimeout(() => checkReviewerStatus(), 100);
+    }
+}
+
+// ✅ NEW FUNCTION - This is what makes reviewers skip region selection
+function checkReviewerStatus() {
+    const accessEmailInput = document.getElementById('accessEmail');
+    if (!accessEmailInput) return;
+    
+    const email = accessEmailInput.value.trim();
+    const regionDiv = document.getElementById('regionSelectionDiv');
+    const reviewerInfo = document.getElementById('reviewerInfo');
+    const accessBtn = document.getElementById('accessDashboardBtn');
+    
+    if (!email) {
+        regionDiv.style.display = 'none';
+        reviewerInfo.style.display = 'none';
+        accessBtn.disabled = true;
+        accessBtn.style.opacity = '0.5';
+        return;
+    }
+    
+    // Check if email is a reviewer
+    let reviewerRegion = null;
+    for (const region in REGION_REVIEWERS) {
+        if (REGION_REVIEWERS[region].some(r => r.email === email)) {
+            reviewerRegion = region;
+            break;
+        }
+    }
+    
+    if (reviewerRegion) {
+        // User is a reviewer
+        reviewerInfo.style.display = 'block';
+        regionDiv.style.display = 'none';
+        document.getElementById('detectedRegion').textContent = reviewerRegion;
+        
+        // Auto-set region
+        currentRegion = reviewerRegion;
+        
+        accessBtn.disabled = false;
+        accessBtn.style.opacity = '1';
+    } else {
+        // User is not a reviewer - must select region
+        reviewerInfo.style.display = 'none';
+        regionDiv.style.display = 'block';
+        
+        const regionSelect = document.getElementById('accessRegion');
+        regionSelect.onchange = enableAccessButton;
+        
+        // Check if region already selected
+        if (regionSelect.value) {
+            accessBtn.disabled = false;
+            accessBtn.style.opacity = '1';
+        } else {
+            accessBtn.disabled = true;
+            accessBtn.style.opacity = '0.5';
+        }
+    }
+}
+function enableAccessButton() {
+    const accessBtn = document.getElementById('accessDashboardBtn');
+    const regionSelect = document.getElementById('accessRegion');
+    
+    if (regionSelect && regionSelect.value) {
+        accessBtn.disabled = false;
+        accessBtn.style.opacity = '1';
+    } else {
+        accessBtn.disabled = true;
+        accessBtn.style.opacity = '0.5';
+    }
+}
+
+function closeReviewAccessModal() {
+    const modal = document.getElementById('reviewAccessModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// ✅ UPDATED FUNCTION - Works for both reviewers and users
+function accessReviewDashboard() {
+    const email = document.getElementById('accessEmail').value.trim();
+    
+    if (!email) {
+        alert('Please enter your email');
+        return;
+    }
+    
+    // Check if reviewer (region already set) or user (need to get region)
+    let region = currentRegion;
+    
+    if (!region) {
+        region = document.getElementById('accessRegion').value;
+        if (!region) {
+            alert('Please select a region');
+            return;
+        }
+    }
+    
+    // Set global variables
+    currentUserEmail = email;
+    currentRegion = region;
+    
+    // Close modal
+    closeReviewAccessModal();
+    
+    // Show review dashboard
+    showReviewDashboard();
+}
+
     </script>
 </body>
 </html>
