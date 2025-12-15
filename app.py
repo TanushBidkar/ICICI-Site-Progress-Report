@@ -1773,6 +1773,41 @@ def verify_user_login():
         print(f"Login Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/register-user', methods=['POST'])
+def register_user():
+    data = request.json
+    email = data.get('email', '').strip()
+    password = data.get('password', '').strip()
+    name = data.get('name', '').strip()
+    
+    if not email or not password or not name:
+        return jsonify({'success': False, 'error': 'All fields required'}), 400
+    
+    try:
+        # Check if user already exists
+        users_ref = db.collection('users')
+        existing = users_ref.where('email', '==', email).limit(1).stream()
+        
+        if any(existing):
+            return jsonify({'success': False, 'error': 'Email already registered'}), 400
+        
+        # Hash password
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+        
+        # Add to Firebase
+        users_ref.add({
+            'email': email,
+            'password': hashed_password.decode('utf-8'),
+            'name': name,
+            'approved': False,  # Not a reviewer by default
+            'createdAt': firestore.SERVER_TIMESTAMP
+        })
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
