@@ -1279,12 +1279,51 @@ let isReviewer = false;
 
 // ✅ AUTO-FETCH CURRENT USER ON PAGE LOAD
 document.addEventListener('DOMContentLoaded', async () => {
-    await autoDetectCurrentUser();
+    // ✅ FIRST: Check URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailFromURL = urlParams.get('email');
+    const nameFromURL = urlParams.get('name');
+    
+    if (emailFromURL) {
+        // Store in localStorage for this domain
+        localStorage.setItem('currentUser', emailFromURL);
+        localStorage.setItem('userName', nameFromURL || '');
+        
+        // Remove from URL for security
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        console.log('✅ Email received from login:', emailFromURL);
+    }
+    
+    // ✅ THEN: Auto-detect from localStorage
+    const storedEmail = localStorage.getItem('currentUser');
+    const storedName = localStorage.getItem('userName');
+    
+    if (storedEmail) {
+        currentUserEmail = storedEmail;
+        currentUserName = storedName || '';
+        
+        console.log('✅ Auto-detected user:', currentUserEmail);
+        
+        // Auto-detect region for reviewers
+        for (const region in REGION_REVIEWERS) {
+            if (REGION_REVIEWERS[region].some(r => r.email === storedEmail)) {
+                currentRegion = region;
+                isReviewer = true;
+                console.log('✅ Reviewer detected for region:', region);
+                break;
+            }
+        }
+    } else {
+        console.log('⚠️ No user email found');
+    }
+    
+    // Initialize default entries
     addWorkEntry();
     addQualityEntry();
     addMakeModelEntry();
     
-    const urlParams = new URLSearchParams(window.location.search);
+    // Check if redirected to reviews
     if (urlParams.get('view') === 'reviews') {
         showReviewDashboard();
     }
@@ -2706,4 +2745,4 @@ function accessReviewDashboard() {
 
     </script>
 </body>
-    </html>
+</html>
