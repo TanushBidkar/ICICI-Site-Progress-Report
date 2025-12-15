@@ -1311,12 +1311,13 @@ async function autoDetectCurrentUser() {
                     break;
                 }
             }
+        } else {
+            console.log('⚠️ No user email found in localStorage');
         }
     } catch (error) {
         console.error('Error auto-detecting user:', error);
     }
 }
-
 /* =========================================
    EVENT LISTENERS & BASIC INFO
    ========================================= */
@@ -2546,15 +2547,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function openReviewsFromHome() {
-    // ✅ Check if user is already logged in
+    console.log('🔍 Opening reviews dashboard...');
+    console.log('📧 Current user email:', currentUserEmail);
+    
+    // ✅ If user is logged in, go directly to dashboard
     if (currentUserEmail) {
-        // User detected, go directly to dashboard
-        console.log('✅ User auto-detected:', currentUserEmail);
+        console.log('✅ User already logged in, showing dashboard');
         showReviewDashboard();
         return;
     }
     
-    // ✅ No user detected, show modal
+    // ✅ If NOT logged in, show modal
+    console.log('⚠️ No user detected, showing login modal');
+    
     const modalHTML = `
         <div id="reviewAccessModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
             <div style="background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%;">
@@ -2562,7 +2567,7 @@ function openReviewsFromHome() {
                 
                 <div style="margin-bottom: 20px;">
                     <label style="font-weight: bold; display: block; margin-bottom: 8px;">Your Email *</label>
-                    <input type="email" id="accessEmail" placeholder="your.email@company.com" value="${currentUserEmail || ''}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;" oninput="checkReviewerStatus()">
+                    <input type="email" id="accessEmail" placeholder="your.email@company.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;" oninput="checkReviewerStatus()">
                 </div>
                 
                 <div id="regionSelectionDiv" style="margin-bottom: 20px; display: none;">
@@ -2574,29 +2579,22 @@ function openReviewsFromHome() {
                         <option value="South">South</option>
                         <option value="North">North</option>
                     </select>
-                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">⚠️ Note: You're a user. Select region to view your submissions.</p>
                 </div>
                 
                 <div id="reviewerInfo" style="display: none; background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <p style="color: #2e7d32; font-weight: bold; margin: 0;">✅ Reviewer Detected</p>
-                    <p style="color: #2e7d32; margin: 5px 0 0 0; font-size: 0.95em;">Region: <strong id="detectedRegion"></strong></p>
-                    <p style="color: #666; margin: 5px 0 0 0; font-size: 0.85em;">You'll see reviews assigned to you.</p>
+                    <p style="color: #2e7d32; margin: 5px 0 0 0;">Region: <strong id="detectedRegion"></strong></p>
                 </div>
                 
-                <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
+                <div style="display: flex; gap: 15px; justify-content: flex-end;">
                     <button class="btn btn-secondary" onclick="closeReviewAccessModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="accessReviewDashboard()" id="accessDashboardBtn" disabled style="opacity: 0.5;">Access Dashboard</button>
+                    <button class="btn btn-primary" onclick="accessReviewDashboard()" id="accessDashboardBtn" disabled style="opacity: 0.5;">Access</button>
                 </div>
             </div>
         </div>
     `;
     
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // ✅ Auto-check status if email already in localStorage
-    if (currentUserEmail) {
-        setTimeout(() => checkReviewerStatus(), 100);
-    }
 }
 
 // ✅ NEW FUNCTION - This is what makes reviewers skip region selection
@@ -2708,4 +2706,4 @@ function accessReviewDashboard() {
 
     </script>
 </body>
-</html>
+    </html>
