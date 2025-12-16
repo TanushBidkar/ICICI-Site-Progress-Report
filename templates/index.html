@@ -489,13 +489,31 @@
                             </select>
                         </div>
                     </div>
-
-                     <div style="text-align: center; margin: 30px 0;">
-        <button type="button" class="btn" style="background: #17a2b8; color: white; padding: 15px 30px; font-size: 1.1em;" onclick="openReviewsFromHome()">
-            📊 Site Progress Report Reviews
-        </button>
+                    <div style="text-align: center; margin: 30px 0;">
+    <button type="button" class="btn" style="background: #17a2b8; color: white; padding: 15px 30px; font-size: 1.1em;" onclick="showReviewOptionsModal()">
+        📊 Site Progress Report Reviews
+    </button>
+</div>
+ <!-- Review Options Modal -->
+<div id="reviewOptionsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 15px; padding: 40px; max-width: 500px; width: 90%;">
+        <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">📊 Site Progress Report Options</h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <button class="btn btn-primary" onclick="uploadForReview()" style="padding: 20px; font-size: 1.2em; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                📤 Upload for Review
+            </button>
+            
+            <button class="btn" style="background: #28a745; color: white; padding: 20px; font-size: 1.2em; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="reviewAndCheckStatus()">
+                📋 Review and Check Status
+            </button>
+            
+            <button class="btn btn-secondary" onclick="closeReviewOptionsModal()" style="padding: 15px;">
+                Cancel
+            </button>
+        </div>
     </div>
-
+</div>
                     <div class="btn-group">
                         <div></div>
                         <button type="button" class="btn btn-primary" onclick="nextSection(1)">
@@ -521,9 +539,9 @@
             <input type="text" id="branch_code" name="branch_code" readonly style="background-color: #f0f0f0;">
         </div>
         <div class="form-group">
-    <label for="date_of_visit">Date of Visit</label>
-    <input type="text" id="date_of_visit" name="date_of_visit" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
-</div>
+            <label for="date_of_visit">Date of Visit</label>
+            <input type="date" id="date_of_visit" name="date_of_visit">
+        </div>
     </div>
 
     
@@ -925,21 +943,21 @@
         <input type="text" id="hvac_vendor" name="hvac_vendor">
     </div>
     <div class="form-group">
-    <label for="project_start_date">Project Start Date</label>
-    <input type="text" id="project_start_date" name="project_start_date" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
-</div>
-<div class="form-group">
-    <label for="planned_handover_date">Planned Handover Date</label>
-    <input type="text" id="planned_handover_date" name="planned_handover_date" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
-</div>
-<div class="form-group">
-    <label for="actual_handover_date">Actual Handover Date</label>
-    <input type="text" id="actual_handover_date" name="actual_handover_date" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}">
-</div>
-<div class="form-group">
-    <label for="quality_date_of_visit">Date of Visit</label>
-    <input type="text" id="quality_date_of_visit" name="quality_date_of_visit" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" readonly style="background-color: #f0f0f0;">
-</div>
+        <label for="project_start_date">Project Start Date</label>
+        <input type="date" id="project_start_date" name="project_start_date">
+    </div>
+    <div class="form-group">
+        <label for="planned_handover_date">Planned Handover Date</label>
+        <input type="date" id="planned_handover_date" name="planned_handover_date">
+    </div>
+    <div class="form-group">
+        <label for="actual_handover_date">Actual Handover Date</label>
+        <input type="date" id="actual_handover_date" name="actual_handover_date">
+    </div>
+    <div class="form-group">
+        <label for="quality_date_of_visit">Date of Visit</label>
+        <input type="date" id="quality_date_of_visit" name="quality_date_of_visit" readonly style="background-color: #f0f0f0;">
+    </div>
 </div>
 
 <h3 style="margin: 20px 0; color: #667eea;">Quality Observations</h3>
@@ -1150,20 +1168,14 @@
 
         <div class="form-group">
     <label for="user_email_input">Your Email *</label>
-    <input type="email" id="user_email_input" required placeholder="your.email@company.com" value="">
+    <input type="email" id="user_email_input" required placeholder="your.email@company.com" readonly style="background-color: #f0f0f0;">
 </div>
 
 <div class="form-group">
     <label for="user_name_input">Your Name *</label>
-    <input type="text" id="user_name_input" required placeholder="Your Full Name" value="">
+    <input type="text" id="user_name_input" required placeholder="Your Full Name" readonly style="background-color: #f0f0f0;">
 </div>
 
-
-<div class="form-group" style="grid-column: 1 / -1; text-align: center; margin: 20px 0;">
-    <button type="button" class="btn" style="background: #dc3545; color: white;" onclick="changeUserLogin()">
-        🔄 Change User / Logout
-    </button>
-</div>
         <div class="form-group">
             <label for="sol_id_confirm">SOL ID *</label>
             <input type="text" id="sol_id_confirm" required readonly style="background-color: #f0f0f0;">
@@ -1222,13 +1234,12 @@
         <h3 style="color: #667eea;">Your Approved Reports Count: <span id="userApprovedCount" style="font-size: 2em; color: #28a745;">0</span></h3>
     </div>
 
-    <div style="display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap;">
-    <button class="btn btn-primary" onclick="showPendingReviews()">📋 Pending Reviews</button>
-    <button class="btn" style="background: #28a745; color: white;" onclick="showCompletedReviews()">✅ Completed Reviews</button>
-    <button class="btn btn-secondary" onclick="showAllApprovedReports()">📁 All Approved Reports</button>
-    <button class="btn" style="background: #6c757d; color: white;" onclick="goBackToHome()">🏠 New Report</button>
-    <button class="btn" style="background: #dc3545; color: white;" onclick="logoutFromReviewDashboard()">🔄 Change User / Logout</button>
-</div>
+    <div style="display: flex; gap: 20px; margin-bottom: 30px;">
+        <button class="btn btn-primary" onclick="showPendingReviews()">📋 Pending Reviews</button>
+        <button class="btn" style="background: #28a745; color: white;" onclick="showCompletedReviews()">✅ Completed Reviews</button>
+        <button class="btn btn-secondary" onclick="showAllApprovedReports()">📁 All Approved Reports</button>
+        <button class="btn" style="background: #6c757d; color: white;" onclick="goBackToHome()">🏠 New Report</button>
+    </div>
 
     <div id="reviewsContainer" style="min-height: 400px;">
         <!-- Reviews will be loaded here -->
@@ -1302,36 +1313,7 @@ let isReviewer = false;
 document.addEventListener('DOMContentLoaded', async () => {
     const urlParams = new URLSearchParams(window.location.search);
     
-    // ✅ FIX: Try localStorage FIRST (fastest method)
-    const storedEmail = localStorage.getItem('currentUser');
-    const storedName = localStorage.getItem('userName');
-    
-    if (storedEmail) {
-        currentUserEmail = storedEmail;
-        currentUserName = storedName || '';
-        console.log('✅ Email loaded from localStorage:', storedEmail);
-        
-        // Auto-detect region for reviewers
-        for (const region in REGION_REVIEWERS) {
-            if (REGION_REVIEWERS[region].some(r => r.email === currentUserEmail)) {
-                currentRegion = region;
-                isReviewer = true;
-                console.log('✅ Reviewer detected for region:', region);
-                break;
-            }
-        }
-        
-        const savedRegion = localStorage.getItem('currentRegion');
-        if (savedRegion && !currentRegion) {
-            currentRegion = savedRegion;
-        }
-        
-        // Initialize page
-        initializePage();
-        return; // ✅ Exit early if localStorage worked
-    }
-    
-    // ✅ METHOD 2: Try session ID from URL (cross-domain via Firebase)
+    // ✅ METHOD 1: Try session ID first (works cross-domain via Firebase)
     const sessionId = urlParams.get('session') || localStorage.getItem('sessionId');
     
     if (sessionId) {
@@ -1351,61 +1333,72 @@ document.addEventListener('DOMContentLoaded', async () => {
                     currentUserEmail = sessionData.email;
                     currentUserName = sessionData.name;
                     
+                    // Save to localStorage
                     localStorage.setItem('currentUser', sessionData.email);
                     localStorage.setItem('userName', sessionData.name);
                     localStorage.setItem('sessionId', sessionId);
                     
                     console.log('✅ Session loaded successfully:', currentUserEmail);
-                    window.history.replaceState({}, document.title, window.location.pathname);
                     
-                    initializePage();
-                    return;
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    console.warn('⚠️ Session validation failed');
+                    tryEmailFromURL();
                 }
+            } else {
+                console.error('❌ Session fetch failed');
+                tryEmailFromURL();
             }
         } catch (error) {
             console.error('❌ Error fetching session:', error);
+            tryEmailFromURL();
+        }
+    } else {
+        // No session ID, try other methods
+        tryEmailFromURL();
+    }
+    
+    // Helper function to try email from URL
+    function tryEmailFromURL() {
+        // ✅ METHOD 2: Try email from URL parameter
+        const emailFromURL = urlParams.get('email');
+        const nameFromURL = urlParams.get('name');
+        
+        if (emailFromURL) {
+            currentUserEmail = emailFromURL;
+            currentUserName = nameFromURL || '';
+            
+            localStorage.setItem('currentUser', emailFromURL);
+            localStorage.setItem('userName', nameFromURL || '');
+            
+            console.log('✅ Email loaded from URL:', emailFromURL);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            // ✅ METHOD 3: Try localStorage (same domain only)
+            const storedEmail = localStorage.getItem('currentUser');
+            const storedName = localStorage.getItem('userName');
+            
+            if (storedEmail) {
+                currentUserEmail = storedEmail;
+                currentUserName = storedName || '';
+                console.log('✅ Email loaded from localStorage:', storedEmail);
+            } else {
+                console.log('⚠️ No user email found');
+            }
         }
     }
     
-    // ✅ METHOD 3: Try email from URL parameter
-    const emailFromURL = urlParams.get('email');
-    const nameFromURL = urlParams.get('name');
-    
-    if (emailFromURL) {
-        currentUserEmail = emailFromURL;
-        currentUserName = nameFromURL || '';
-        
-        localStorage.setItem('currentUser', emailFromURL);
-        localStorage.setItem('userName', nameFromURL || '');
-        
-        console.log('✅ Email loaded from URL:', emailFromURL);
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        initializePage();
-        return;
-    }
-    
-    // ✅ NO USER FOUND - Show helpful message
-    console.log('⚠️ No user credentials found. User needs to login.');
-    initializePage(); // Still initialize the page
-});
-
-// ✅ NEW: Separate initialization function
-function initializePage() {
-    // Auto-detect region for reviewers
+    // Auto-detect region for reviewers (after email is loaded)
     if (currentUserEmail) {
         for (const region in REGION_REVIEWERS) {
             if (REGION_REVIEWERS[region].some(r => r.email === currentUserEmail)) {
                 currentRegion = region;
                 isReviewer = true;
+                console.log('✅ Reviewer detected for region:', region);
                 break;
             }
         }
-    }
-    
-    const savedRegion = localStorage.getItem('currentRegion');
-    if (savedRegion && !currentRegion) {
-        currentRegion = savedRegion;
     }
     
     // Initialize default entries
@@ -1414,13 +1407,39 @@ function initializePage() {
     addMakeModelEntry();
     
     // Check if redirected to reviews
-    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('view') === 'reviews') {
         showReviewDashboard();
     }
-}
-// ✅ NEW FUNCTION: Automatically detect logged-in user
+});
 
+// ✅ NEW FUNCTION: Automatically detect logged-in user
+async function autoDetectCurrentUser() {
+    try {
+        const userEmail = localStorage.getItem('currentUser');
+        const userName = localStorage.getItem('userName');
+        
+        if (userEmail) {
+            currentUserEmail = userEmail;
+            currentUserName = userName || '';
+            
+            console.log('✅ Auto-detected user:', currentUserEmail);
+            
+            // Auto-detect region for reviewers
+            for (const region in REGION_REVIEWERS) {
+                if (REGION_REVIEWERS[region].some(r => r.email === userEmail)) {
+                    currentRegion = region;
+                    isReviewer = true;
+                    console.log('✅ Reviewer detected for region:', region);
+                    break;
+                }
+            }
+        } else {
+            console.log('⚠️ No user email found in localStorage');
+        }
+    } catch (error) {
+        console.error('Error auto-detecting user:', error);
+    }
+}
 /* =========================================
    EVENT LISTENERS & BASIC INFO
    ========================================= */
@@ -1500,23 +1519,8 @@ async function nextSection(section) {
 
     if (section === 3) {
         autoFillQualitySection();
-        
-        // Auto-fill email and name but allow editing
-    if (currentUserEmail) {
         document.getElementById('user_email_input').value = currentUserEmail;
-    }
-    if (currentUserName) {
         document.getElementById('user_name_input').value = currentUserName;
-    }
-    document.getElementById('user_email_input').addEventListener('change', function() {
-        currentUserEmail = this.value.trim();
-        localStorage.setItem('currentUser', currentUserEmail);
-    });
-    
-    document.getElementById('user_name_input').addEventListener('change', function() {
-        currentUserName = this.value.trim();
-        localStorage.setItem('userName', currentUserName);
-    });
     }
 
     updateSteps(section + 1);
@@ -2060,14 +2064,8 @@ async function generateAndDownload() {
             a.click();
             window.URL.revokeObjectURL(url);
 
-            document.getElementById('section4').classList.remove('active');
-            document.getElementById('section5').classList.add('active');
-            
-            document.getElementById('sol_id_confirm').value = document.getElementById('sol_id').value;
-            document.getElementById('visit_no_confirm').value = document.getElementById('visit_no').value;
-            
-            updateSteps(5);
-            window.scrollTo(0, 0);
+            // After download, show the review options modal
+showReviewOptionsModal();
         } else {
             const text = await response.text();
             alert('Error: ' + text);
@@ -2091,8 +2089,6 @@ async function loadReviewers() {
         reviewerSelect.innerHTML = '<option value="">First select a region</option>';
         return;
     }
-     currentRegion = region;
-    localStorage.setItem('currentRegion', region);
     
     try {
         const response = await fetch('/get-reviewers', {
@@ -2552,6 +2548,44 @@ function closeReviewModal() {
     }
 }
 
+// Show the review options modal
+function showReviewOptionsModal() {
+    const modal = document.getElementById('reviewOptionsModal');
+    modal.style.display = 'flex';
+}
+
+// Close the review options modal
+function closeReviewOptionsModal() {
+    const modal = document.getElementById('reviewOptionsModal');
+    modal.style.display = 'none';
+}
+
+// Option 1: Upload for Review
+function uploadForReview() {
+    closeReviewOptionsModal();
+    
+    // Open Section 5 (Region & Reviewer Selection)
+    for (let i = 1; i <= 6; i++) {
+        document.getElementById(`section${i}`).classList.remove('active');
+    }
+    document.getElementById('section5').classList.add('active');
+    
+    // Pre-fill fields if available
+    document.getElementById('sol_id_confirm').value = document.getElementById('sol_id').value || '';
+    document.getElementById('visit_no_confirm').value = document.getElementById('visit_no').value || '';
+    document.getElementById('user_email_input').value = currentUserEmail || '';
+    document.getElementById('user_name_input').value = currentUserName || '';
+    
+    updateSteps(5);
+    window.scrollTo(0, 0);
+}
+
+// Option 2: Review and Check Status
+function reviewAndCheckStatus() {
+    closeReviewOptionsModal();
+    openReviewsFromHome();
+}
+
 async function submitReviewDecision(sessionId, region, solId, visitNo) {
     const decision = document.getElementById('reviewDecision').value;
     const comments = document.getElementById('reviewComments').value.trim();
@@ -2668,235 +2702,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ✅ Function to open the Login Modal
     function openReviewsFromHome() {
-    const modalHTML = `
-        <div id="reviewOptionsModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 500px; width: 90%; text-align: center;">
-                <h2 style="color: #667eea; margin-bottom: 30px;">📊 Site Progress Report Options</h2>
-                
-                <button class="btn btn-primary" onclick="showUploadForReview()" style="width: 100%; margin-bottom: 20px; padding: 20px; font-size: 1.2em;">
-                    📤 Upload for Review
-                </button>
-                
-                <button class="btn" style="background: #28a745; color: white; width: 100%; padding: 20px; font-size: 1.2em;" onclick="showReviewerDashboard()">
-                    📋 Review & Check Status
-                </button>
-                
-                <button class="btn btn-secondary" onclick="closeReviewOptionsModal()" style="width: 100%; margin-top: 20px;">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-function closeReviewOptionsModal() {
-    const modal = document.getElementById('reviewOptionsModal');
-    if (modal) modal.remove();
-}
-
-function showUploadForReview() {
-    closeReviewOptionsModal();
-    
-    // Go to Section 5 (Upload for Review)
-    for (let i = 1; i <= 6; i++) {
-        document.getElementById(`section${i}`).classList.remove('active');
-    }
-    document.getElementById('section5').classList.add('active');
-    updateSteps(5);
-    
-    // Auto-fill email and name if available
-    const emailInput = document.getElementById('user_email_input');
-    const nameInput = document.getElementById('user_name_input');
-    const regionSelect = document.getElementById('region_select');
-    
-    if (currentUserEmail) {
-        emailInput.value = currentUserEmail;
-    }
-    if (currentUserName) {
-        nameInput.value = currentUserName;
-    }
-    
-    // ✅ NEW: Pre-fill region if previously selected
-    const savedRegion = localStorage.getItem('currentRegion');
-    if (savedRegion) {
-        regionSelect.value = savedRegion;
-        // Trigger reviewer loading
-        loadReviewers();
-    }
-    
-    window.scrollTo(0, 0);
-}
-
-function showReviewerDashboard() {
-    closeReviewOptionsModal();
-    showReviewDashboard(); // This already exists in your code
-}
-
-function openUploadForReview() {
-    closeReviewOptionsModal();
-    
-    const modalHTML = `
-        <div id="uploadLoginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
-                <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to Upload</h2>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
-                    <input type="email" id="uploadEmail" placeholder="your.email@cushwake.com" value="${currentUserEmail}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Name *</label>
-                    <input type="text" id="uploadName" placeholder="Your Full Name" value="${currentUserName}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                </div>
-                
-                <div style="margin-bottom: 25px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
-                    <input type="password" id="uploadPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                </div>
-                
-                <div id="uploadLoginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
-                
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                    <button class="btn btn-secondary" onclick="closeUploadLoginModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="verifyUploadLogin()">Continue</button>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-function closeUploadLoginModal() {
-    const modal = document.getElementById('uploadLoginModal');
-    if (modal) modal.remove();
-}
-
-async function verifyUploadLogin() {
-    const email = document.getElementById('uploadEmail').value.trim();
-    const name = document.getElementById('uploadName').value.trim();
-    const password = document.getElementById('uploadPassword').value.trim();
-    const errorDiv = document.getElementById('uploadLoginError');
-    
-    if (!email || !name || !password) {
-        errorDiv.textContent = 'Please fill all fields';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    try {
-        const response = await fetch('/verify-user-login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password })
-        });
+        console.log('🔍 Opening reviews dashboard...');
         
-        const result = await response.json();
-        
-        if (result.success) {
-            currentUserEmail = email;
-            currentUserName = name;
-            localStorage.setItem('currentUser', email);
-            localStorage.setItem('userName', name);
-            
-            closeUploadLoginModal();
-            
-            // Navigate to section 5 (Upload for Review page)
-            for (let i = 1; i <= 6; i++) {
-                document.getElementById(`section${i}`).classList.remove('active');
-            }
-            document.getElementById('section5').classList.add('active');
-            
-            // Pre-fill the form
-            document.getElementById('user_email_input').value = currentUserEmail;
-            document.getElementById('user_name_input').value = currentUserName;
-            
-            window.scrollTo(0, 0);
-        } else {
-            errorDiv.textContent = result.error || 'Login failed';
-            errorDiv.style.display = 'block';
-        }
-    } catch (error) {
-        errorDiv.textContent = 'Server error. Please try again.';
-        errorDiv.style.display = 'block';
-    }
-}
-
-function openReviewDashboardLogin() {
-    closeReviewOptionsModal();
-    
-    const modalHTML = `
-        <div id="dashboardLoginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
-                <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to View Status</h2>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
-                    <input type="email" id="dashboardEmail" placeholder="your.email@cushwake.com" value="${currentUserEmail}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                </div>
-                
-                <div style="margin-bottom: 25px;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
-                    <input type="password" id="dashboardPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                </div>
-                
-                <div id="dashboardLoginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
-                
-                <div style="display: flex; gap: 15px; justify-content: center;">
-                    <button class="btn btn-secondary" onclick="closeDashboardLoginModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="verifyDashboardLogin()">Continue</button>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
-function closeDashboardLoginModal() {
-    const modal = document.getElementById('dashboardLoginModal');
-    if (modal) modal.remove();
-}
-
-async function verifyDashboardLogin() {
-    const email = document.getElementById('dashboardEmail').value.trim();
-    const password = document.getElementById('dashboardPassword').value.trim();
-    const errorDiv = document.getElementById('dashboardLoginError');
-    
-    if (!email || !password) {
-        errorDiv.textContent = 'Please enter both email and password';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    try {
-        const response = await fetch('/verify-user-login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            currentUserEmail = result.email;
-            currentUserName = result.name;
-            currentRegion = result.region || '';
-            
-            localStorage.setItem('currentUser', result.email);
-            localStorage.setItem('userName', result.name);
-            
-            closeDashboardLoginModal();
+        if (currentUserEmail) {
+            console.log('✅ User already logged in');
             showReviewDashboard();
-        } else {
-            errorDiv.textContent = result.error || 'Login failed';
-            errorDiv.style.display = 'block';
+            return;
         }
-    } catch (error) {
-        errorDiv.textContent = 'Server error. Please try again.';
-        errorDiv.style.display = 'block';
+        
+        // Show the Login Modal
+        const modalHTML = `
+            <div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
+                    <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to View Reviews</h2>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
+                        <input type="email" id="loginEmail" placeholder="your.email@cushwake.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                    </div>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                    </div>
+                    
+                    <div id="loginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
+                    
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('loginModal').remove()">Cancel</button>
+                        <button class="btn btn-primary" onclick="verifyLogin()">Login</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
     }
-}
 
     // ✅ Function to verify login with backend
     async function verifyLogin() {
@@ -3057,256 +2897,6 @@ function accessReviewDashboard() {
     
     // Show review dashboard
     showReviewDashboard();
-}
-
-// ===== DATE FORMATTING TO DD/MM/YYYY =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Get all date input fields
-    const dateInputs = document.querySelectorAll('input[placeholder="DD/MM/YYYY"]');
-    
-    dateInputs.forEach(input => {
-        // Auto-fill today's date when field is focused and empty
-        input.addEventListener('focus', function() {
-            if (!this.value || this.value.trim() === '') {
-                const today = new Date();
-                const dd = String(today.getDate()).padStart(2, '0');
-                const mm = String(today.getMonth() + 1).padStart(2, '0');
-                const yyyy = today.getFullYear();
-                this.value = `${dd}/${mm}/${yyyy}`;
-            }
-        });
-        
-        // Format as user types
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-            
-            // Add slashes automatically
-            if (value.length >= 2) {
-                value = value.slice(0, 2) + '/' + value.slice(2);
-            }
-            if (value.length >= 5) {
-                value = value.slice(0, 5) + '/' + value.slice(5, 9);
-            }
-            
-            // Limit to 10 characters (DD/MM/YYYY)
-            e.target.value = value.slice(0, 10);
-        });
-        
-        // Validate on blur
-        input.addEventListener('blur', function() {
-            const datePattern = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-            const match = this.value.match(datePattern);
-            
-            if (match) {
-                const day = parseInt(match[1]);
-                const month = parseInt(match[2]);
-                const year = parseInt(match[3]);
-                
-                // Basic validation
-                if (day < 1 || day > 31 || month < 1 || month > 12) {
-                    alert('Invalid date format. Please use DD/MM/YYYY');
-                    this.value = '';
-                }
-            } else if (this.value && this.value.trim() !== '') {
-                alert('Invalid date format. Please use DD/MM/YYYY (e.g., 31/12/2025)');
-                this.value = '';
-            }
-        });
-    });
-});
-
-function logoutFromReviewDashboard() {
-    if (confirm('Are you sure you want to logout and change user?')) {
-        // Clear stored credentials
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('sessionId');
-        
-        // Reset global variables
-        currentUserEmail = '';
-        currentUserName = '';
-        currentRegion = '';
-        isReviewer = false;
-        
-        // Go back to home page
-        for (let i = 1; i <= 6; i++) {
-            document.getElementById(`section${i}`).classList.remove('active');
-        }
-        document.getElementById('section1').classList.add('active');
-        updateSteps(1);
-        updateProgress(25);
-        
-        alert('✅ Logged out successfully. You can now login with different credentials.');
-        window.scrollTo(0, 0);
-    }
-}
-
-function changeUserLogin() {
-    if (confirm('Are you sure you want to logout?')) {
-        // Show registration/login modal
-        const modalHTML = `
-            <div id="authModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-                <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
-                    <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">Login or Register</h2>
-                    
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button id="loginTab" class="btn btn-primary" style="flex: 1;" onclick="showLoginForm()">Login</button>
-                        <button id="registerTab" class="btn btn-secondary" style="flex: 1;" onclick="showRegisterForm()">Register</button>
-                    </div>
-                    
-                    <!-- Login Form -->
-                    <div id="loginForm">
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
-                            <input type="email" id="loginEmail" placeholder="your.email@company.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
-                            <input type="password" id="loginPassword" placeholder="Enter password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                        </div>
-                        
-                        <div id="loginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px;"></div>
-                        
-                        <button class="btn btn-primary" onclick="submitLogin()" style="width: 100%;">Login</button>
-                    </div>
-                    
-                    <!-- Registration Form -->
-                    <div id="registerForm" style="display: none;">
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Full Name *</label>
-                            <input type="text" id="registerName" placeholder="Your Full Name" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
-                            <input type="email" id="registerEmail" placeholder="your.email@company.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                        </div>
-                        
-                        <div style="margin-bottom: 20px;">
-                            <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
-                            <input type="password" id="registerPassword" placeholder="Create password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px;">
-                        </div>
-                        
-                        <div id="registerError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px;"></div>
-                        
-                        <button class="btn btn-primary" onclick="submitRegister()" style="width: 100%;">Register</button>
-                    </div>
-                    
-                    <button class="btn btn-secondary" onclick="closeAuthModal()" style="width: 100%; margin-top: 15px;">Cancel</button>
-                </div>
-            </div>
-        `;
-        
-        // Clear old data
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('sessionId');
-        currentUserEmail = '';
-        currentUserName = '';
-        
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-}
-function showLoginForm() {
-    document.getElementById('loginForm').style.display = 'block';
-    document.getElementById('registerForm').style.display = 'none';
-    document.getElementById('loginTab').className = 'btn btn-primary';
-    document.getElementById('registerTab').className = 'btn btn-secondary';
-}
-
-function showRegisterForm() {
-    document.getElementById('loginForm').style.display = 'none';
-    document.getElementById('registerForm').style.display = 'block';
-    document.getElementById('loginTab').className = 'btn btn-secondary';
-    document.getElementById('registerTab').className = 'btn btn-primary';
-}
-
-function closeAuthModal() {
-    const modal = document.getElementById('authModal');
-    if (modal) modal.remove();
-}
-
-async function submitLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value.trim();
-    const errorDiv = document.getElementById('loginError');
-    
-    if (!email || !password) {
-        errorDiv.textContent = 'Please enter both email and password';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    try {
-        const response = await fetch('/verify-user-login', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            currentUserEmail = result.email;
-            currentUserName = result.name;
-            localStorage.setItem('currentUser', result.email);
-            localStorage.setItem('userName', result.name);
-            
-            closeAuthModal();
-            document.getElementById('user_email_input').value = result.email;
-            document.getElementById('user_name_input').value = result.name;
-            
-            alert('✅ Login successful!');
-        } else {
-            errorDiv.textContent = result.error || 'Login failed';
-            errorDiv.style.display = 'block';
-        }
-    } catch (error) {
-        errorDiv.textContent = 'Server error. Please try again.';
-        errorDiv.style.display = 'block';
-    }
-}
-
-async function submitRegister() {
-    const name = document.getElementById('registerName').value.trim();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value.trim();
-    const errorDiv = document.getElementById('registerError');
-    
-    if (!name || !email || !password) {
-        errorDiv.textContent = 'Please fill all fields';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    if (password.length < 6) {
-        errorDiv.textContent = 'Password must be at least 6 characters';
-        errorDiv.style.display = 'block';
-        return;
-    }
-    
-    try {
-        const response = await fetch('/register-user', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ email, password, name })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert('✅ Registration successful! You can now login.');
-            showLoginForm();
-            document.getElementById('loginEmail').value = email;
-        } else {
-            errorDiv.textContent = result.error || 'Registration failed';
-            errorDiv.style.display = 'block';
-        }
-    } catch (error) {
-        errorDiv.textContent = 'Server error. Please try again.';
-        errorDiv.style.display = 'block';
-    }
 }
 
     </script>
