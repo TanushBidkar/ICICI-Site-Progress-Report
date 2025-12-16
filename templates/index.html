@@ -2171,9 +2171,15 @@ async function submitForReview() {
         const result = await response.json();
         
         if (result.success) {
-            alert('✅ Successfully submitted for review!');
-            showReviewDashboard();
-        } else {
+           alert('✅ Successfully submitted for review!');
+           
+           // ✅ FIX: Save these globally so the dashboard knows what to load
+           currentUserEmail = userEmail;
+           currentRegion = region;
+           localStorage.setItem('currentUser', userEmail); // Optional: remember for next time
+
+           showReviewDashboard();
+       } else {
             alert('Error: ' + result.error);
         }
     } catch (error) {
