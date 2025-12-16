@@ -131,24 +131,87 @@ def index():
 
 @app.route('/check-existing', methods=['POST'])
 def check_existing():
-    """Check if SOL ID and Visit No already exists"""
-    data = request.json
-    sol_id = data.get('sol_id')
-    visit_no = data.get('visit_no')
-    
-    # Check in Firebase Storage
-    blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json"
-    blob = bucket.blob(blob_path)
-    
-    if blob.exists():
-        # Download existing data
-        existing_data = json.loads(blob.download_as_string())
-        return jsonify({
-            'exists': True,
-            'data': existing_data  # Return ALL form data
-        })
-    
-    return jsonify({'exists': False})
+    """Check if SOL ID and Visit No already exists - WITH DETAILED LOGGING"""
+    try:
+        data = request.json
+        sol_id = data.get('sol_id')
+        visit_no = data.get('visit_no')
+        
+        if not sol_id or not visit_no:
+            return jsonify({'exists': False})
+        
+        print(f"\n{'='*60}")
+        print(f"🔍 CHECKING EXISTING DATA")
+        print(f"   SOL ID: {sol_id}")
+        print(f"   Visit: {visit_no}")
+        print(f"{'='*60}")
+        
+        # Priority order search
+        search_paths = []
+        
+        # Priority 1: Region-specific approved locations
+        for region in ['West', 'East', 'South', 'North']:
+            search_paths.append((f"ICICI_Site_Progress_Report/{region}/{sol_id}/Visit_{visit_no}/data.json", region))
+        
+        # Priority 2: Root level
+        search_paths.append((f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/data.json", "root"))
+        
+        # Priority 3: Temp drafts
+        search_paths.append((f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/data.json", "temp"))
+        
+        for blob_path, location_type in search_paths:
+            print(f"\n  → Checking: {blob_path}")
+            blob = bucket.blob(blob_path)
+            
+            if blob.exists():
+                print(f"    ✅ FOUND at: {blob_path}")
+                try:
+                    existing_data = json.loads(blob.download_as_string())
+                    
+                    # Log what we found
+                    print(f"    📊 Data fields found: {len(existing_data)}")
+                    print(f"    📋 Sample fields:")
+                    for key in list(existing_data.keys())[:10]:
+                        value = existing_data[key]
+                        if isinstance(value, str) and len(value) > 50:
+                            value = value[:50] + "..."
+                        print(f"       - {key}: {value}")
+                    
+                    # Validate data has content
+                    has_project_name = existing_data.get('project_name')
+                    has_branch_area = existing_data.get('branch_area')
+                    has_sol_id = existing_data.get('sol_id')
+                    
+                    print(f"    🔍 Validation:")
+                    print(f"       - project_name: {'✓' if has_project_name else '✗'}")
+                    print(f"       - branch_area: {'✓' if has_branch_area else '✗'}")
+                    print(f"       - sol_id: {'✓' if has_sol_id else '✗'}")
+                    
+                    if has_project_name or has_branch_area or has_sol_id:
+                        print(f"    ✅ DATA IS VALID - Returning to frontend")
+                        print(f"{'='*60}\n")
+                        return jsonify({
+                            'exists': True,
+                            'data': existing_data,
+                            'location': blob_path
+                        })
+                    else:
+                        print(f"    ⚠️ Data appears empty, continuing search...")
+                        continue
+                        
+                except Exception as e:
+                    print(f"    ❌ Error reading data: {e}")
+                    continue
+        
+        print(f"\n  ⚠️ NO VALID DATA FOUND")
+        print(f"{'='*60}\n")
+        return jsonify({'exists': False})
+        
+    except Exception as e:
+        print(f"❌ ERROR in check_existing: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'exists': False, 'error': str(e)})
 @app.route('/get-existing-images', methods=['POST'])
 def get_existing_images():
     """Get existing images for a visit"""
@@ -180,39 +243,72 @@ def get_project_name():
     data = request.json
     sol_id = data.get('sol_id')
     
-    # Search for any visit with this SOL ID
-    prefix = f"ICICI_Site_Progress_Report/{sol_id}/"
-    blobs = bucket.list_blobs(prefix=prefix, max_results=1)
+    if not sol_id:
+        return jsonify({'found': False})
     
-    for blob in blobs:
-        if 'data.json' in blob.name:
-            existing_data = json.loads(blob.download_as_string())
-            return jsonify({
-                'found': True,
-                'project_name': existing_data.get('project_name', '')
-            })
+    # ✅ Search in BOTH temp_drafts AND final storage
+    search_paths = [
+        f"ICICI_Site_Progress_Report/{sol_id}/",           # Final approved location
+        f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/" # Draft location
+    ]
+    
+    for prefix in search_paths:
+        blobs = bucket.list_blobs(prefix=prefix, max_results=5)
+        
+        for blob in blobs:
+            if 'data.json' in blob.name:
+                try:
+                    existing_data = json.loads(blob.download_as_string())
+                    project_name = existing_data.get('project_name', '')
+                    
+                    if project_name:  # Only return if project name exists
+                        return jsonify({
+                            'found': True,
+                            'project_name': project_name
+                        })
+                except Exception as e:
+                    print(f"Error reading {blob.name}: {e}")
+                    continue
     
     return jsonify({'found': False})
 
 @app.route('/get-image-from-firebase', methods=['POST'])
 def get_image_from_firebase():
-    """Fetch a single image from Firebase as base64"""
+    """Fetch a single image from Firebase - Checks ALL possible locations"""
     try:
         data = request.json
         sol_id = data.get('sol_id')
         visit_no = data.get('visit_no')
         image_type = data.get('image_type')  # 'work', 'qual', 'make'
         image_index = data.get('image_index')
+        region = data.get('region')
         
-        blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/{image_type}_{image_index}.jpg"
-        blob = bucket.blob(blob_path)
+        # Define all possible paths where the image might be hidden
+        # Build all possible paths where image could be
+        possible_paths = []
+
+        # 1. Check ALL region folders FIRST (not just the one passed in)
+        for reg in ['West', 'East', 'South', 'North']:
+            possible_paths.append(f"ICICI_Site_Progress_Report/{reg}/{sol_id}/Visit_{visit_no}/{image_type}_{image_index}.jpg")
+
+        # 2. Check Temp Drafts folder
+        possible_paths.append(f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/{image_type}_{image_index}.jpg")
+
+        # 3. Check Root folder (Legacy/Default location)
+        possible_paths.append(f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/{image_type}_{image_index}.jpg")
         
-        if blob.exists():
-            image_bytes = blob.download_as_bytes()
-            base64_image = base64.b64encode(image_bytes).decode('utf-8')
-            return jsonify({'image_base64': base64_image})
-        else:
-            return jsonify({'image_base64': None}), 404
+        # Loop through paths and return the first one that exists
+        for path in possible_paths:
+            blob = bucket.blob(path)
+            if blob.exists():
+                print(f"✅ Found image at: {path}")
+                image_bytes = blob.download_as_bytes()
+                base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                return jsonify({'image_base64': base64_image})
+        
+        # If loop finishes without returning, image is truly missing
+        print(f"❌ Image not found in any path for {image_type}_{image_index}")
+        return jsonify({'image_base64': None}), 404
             
     except Exception as e:
         print(f"Error fetching image: {e}")
@@ -348,6 +444,62 @@ def save_images_to_firebase(sol_id, visit_no, form_data, files):
         file_key = f'make_image_{i}'
         if file_key in files:
             blob_path = f"ICICI_Site_Progress_Report/{sol_id}/Visit_{visit_no}/make_{i}.jpg"
+            process_and_upload_image(file_key, files[file_key], blob_path)
+
+def save_images_to_firebase_temp(sol_id, visit_no, form_data, files):
+    """Save uploaded images to Firebase Storage TEMP_DRAFTS - MEMORY OPTIMIZED"""
+    
+    def process_and_upload_image(file_key, image_file, blob_path):
+        """Helper to process single image and clean up memory"""
+        try:
+            img = Image.open(image_file)
+            
+            # ✅ Aggressive resize to reduce memory
+            max_size = (800, 600)
+            img.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            img_buffer = io.BytesIO()
+            img.save(img_buffer, format='JPEG', quality=75, optimize=True)
+            img_buffer.seek(0)
+            
+            blob = bucket.blob(blob_path)
+            blob.upload_from_file(img_buffer, content_type='image/jpeg')
+            
+            # ✅ Immediate cleanup
+            img.close()
+            img_buffer.close()
+            del img
+            del img_buffer
+            gc.collect()
+            
+            return True
+        except Exception as e:
+            print(f"Error saving {file_key}: {e}")
+            return False
+    
+    # ✅ CHANGE: Save to temp_drafts instead of root
+    # Work Progress Images
+    work_count = int(form_data.get('work_count', 0))
+    for i in range(work_count):
+        file_key = f'work_image_{i}'
+        if file_key in files:
+            blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/work_{i}.jpg"
+            process_and_upload_image(file_key, files[file_key], blob_path)
+    
+    # Quality Images
+    quality_count = int(form_data.get('quality_count', 0))
+    for i in range(quality_count):
+        file_key = f'qual_image_{i}'
+        if file_key in files:
+            blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/qual_{i}.jpg"
+            process_and_upload_image(file_key, files[file_key], blob_path)
+    
+    # Make/Model Images
+    make_count = int(form_data.get('make_count', 0))
+    for i in range(make_count):
+        file_key = f'make_image_{i}'
+        if file_key in files:
+            blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/make_{i}.jpg"
             process_and_upload_image(file_key, files[file_key], blob_path)
 def fill_progress_report(wb, data):
     """Fill the Progress Report sheet"""
@@ -1318,7 +1470,7 @@ def generate_report():
         # Save JSON temporarily
         json_blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/data.json"
         bucket.blob(json_blob_path).upload_from_string(json.dumps(form_data), content_type='application/json')
-        
+        save_images_to_firebase_temp(sol_id, visit_no, form_data, files)
         gc.collect()
         
         excel_buffer.seek(0)
