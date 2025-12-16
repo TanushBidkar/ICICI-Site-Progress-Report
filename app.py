@@ -19,11 +19,12 @@ import os
 from dotenv import load_dotenv
 import gc  # Add this line at the top with other imports
 import bcrypt
+from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app)
 
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB limit
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 50MB limit
 load_dotenv()
 
 # Firebase Configuration
@@ -1386,7 +1387,7 @@ def submit_for_review():
             'filename': filename,
             'session_id': session_id,
             'status': 'pending',
-            'submitted_at': datetime.now().isoformat(),
+            'submitted_at': datetime.now(timezone.utc).isoformat(),
             'user_comments': user_comments  # ✅ NEW: Save comments
         }
         
@@ -1503,7 +1504,7 @@ def submit_review_decision():
         metadata['status'] = decision
         metadata['review_code'] = review_code
         metadata['reviewer_comments'] = comments
-        metadata['reviewed_at'] = datetime.now().isoformat()
+        metadata['reviewed_at'] = datetime.now(timezone.utc).isoformat()
         
         # Move to completed
         completed_base = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/"
@@ -1551,7 +1552,7 @@ def submit_review_decision():
                 current_count = count_data.get('approved_count', 0)
             
             current_count += 1
-            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now().isoformat()}), content_type='application/json')
+            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now(timezone.utc).isoformat()}), content_type='application/json')
         
         # Delete from pending
         pending_blobs = bucket.list_blobs(prefix=f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/")
@@ -1772,6 +1773,28 @@ def verify_user_login():
     except Exception as e:
         print(f"Login Error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+def format_date_ddmmyyyy(date_obj):
+    """Format datetime to DD/MM/YYYY HH:MM:SS AM/PM format (IST)"""
+    if isinstance(date_obj, str):
+        try:
+            date_obj = datetime.fromisoformat(date_obj.replace('Z', '+00:00'))
+        except:
+            return date_obj
+    
+    if isinstance(date_obj, datetime):
+        # Convert to IST (UTC+5:30)
+        ist = timezone(timedelta(hours=5, minutes=30))
+        
+        if date_obj.tzinfo is None:
+            # Assume UTC if no timezone
+            date_obj = date_obj.replace(tzinfo=timezone.utc)
+        
+        date_obj = date_obj.astimezone(ist)
+        
+        return date_obj.strftime('%d/%m/%Y, %I:%M:%S %p')
+    
+    return str(date_obj)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
