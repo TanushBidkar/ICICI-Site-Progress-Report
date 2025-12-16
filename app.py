@@ -1386,7 +1386,7 @@ def submit_for_review():
             'filename': filename,
             'session_id': session_id,
             'status': 'pending',
-            'submitted_at': datetime.now().strftime('%d/%m/%Y %I:%M:%S %p'),
+            'submitted_at': datetime.now().isoformat(),
             'user_comments': user_comments  # ✅ NEW: Save comments
         }
         
@@ -1503,7 +1503,7 @@ def submit_review_decision():
         metadata['status'] = decision
         metadata['review_code'] = review_code
         metadata['reviewer_comments'] = comments
-        metadata['reviewed_at'] = datetime.now().strftime('%d/%m/%Y %I:%M:%S %p')
+        metadata['reviewed_at'] = datetime.now().isoformat()
         
         # Move to completed
         completed_base = f"ICICI_Site_Progress_Report/{region}/completed_reviews/{session_id}/"
@@ -1551,7 +1551,7 @@ def submit_review_decision():
                 current_count = count_data.get('approved_count', 0)
             
             current_count += 1
-            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now().strftime('%d/%m/%Y %I:%M:%S %p')}), content_type='application/json')
+            count_blob.upload_from_string(json.dumps({'approved_count': current_count, 'last_updated': datetime.now().isoformat()}), content_type='application/json')
         
         # Delete from pending
         pending_blobs = bucket.list_blobs(prefix=f"ICICI_Site_Progress_Report/{region}/pending_reviews/{session_id}/")
@@ -1771,41 +1771,6 @@ def verify_user_login():
             
     except Exception as e:
         print(f"Login Error: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-@app.route('/register-user', methods=['POST'])
-def register_user():
-    data = request.json
-    email = data.get('email', '').strip()
-    password = data.get('password', '').strip()
-    name = data.get('name', '').strip()
-    
-    if not email or not password or not name:
-        return jsonify({'success': False, 'error': 'All fields required'}), 400
-    
-    try:
-        # Check if user already exists
-        users_ref = db.collection('users')
-        existing = users_ref.where('email', '==', email).limit(1).stream()
-        
-        if any(existing):
-            return jsonify({'success': False, 'error': 'Email already registered'}), 400
-        
-        # Hash password
-        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
-        
-        # Add to Firebase
-        users_ref.add({
-            'email': email,
-            'password': hashed_password.decode('utf-8'),
-            'name': name,
-            'approved': False,  # Not a reviewer by default
-            'createdAt': firestore.SERVER_TIMESTAMP
-        })
-        
-        return jsonify({'success': True})
-        
-    except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
