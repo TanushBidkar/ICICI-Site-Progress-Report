@@ -461,7 +461,7 @@
 
             <div id="alertBox" class="alert"></div>
 
-            <form id="reportForm">
+            <form id="reportForm" method="POST" enctype="multipart/form-data" onsubmit="event.preventDefault();">
                 <!-- Section 1: Initial Information -->
                 <div class="section active" id="section1">
                     <div class="section-header">
@@ -2064,8 +2064,15 @@ async function generateAndDownload() {
             a.click();
             window.URL.revokeObjectURL(url);
 
-            // After download, show the review options modal
-showReviewOptionsModal();
+            // After download, go directly to Section 5 (Region & Reviewer Selection)
+document.getElementById('section4').classList.remove('active');
+document.getElementById('section5').classList.add('active');
+
+document.getElementById('sol_id_confirm').value = document.getElementById('sol_id').value;
+document.getElementById('visit_no_confirm').value = document.getElementById('visit_no').value;
+
+updateSteps(5);
+window.scrollTo(0, 0);
         } else {
             const text = await response.text();
             alert('Error: ' + text);
@@ -2249,7 +2256,7 @@ async function showPendingReviews() {
                             <div style="flex: 1;">
                                 <h4 style="color: #667eea; margin: 0;">SOL ID: ${review.sol_id} | Visit: ${review.visit_no}</h4>
                                 <p style="margin: 10px 0;">📤 Submitted by: <strong>${review.user_name}</strong> (${review.user_email})</p>
-                                <p style="margin: 5px 0;">📅 Submitted: ${new Date(review.submitted_at).toLocaleString()}</p>
+                                <p style="margin: 5px 0;">📅 Submitted: ${formatDateTimeDDMMYYYY(review.submitted_at)}</p>  
                                 ${isReviewer ? `<p style="margin: 5px 0;">📧 Reviewer: <strong>You</strong></p>` : `<p style="margin: 5px 0;">👤 Reviewer: ${review.reviewer_email}</p>`}
                                 
                                 ${review.user_comments ? `
@@ -2317,7 +2324,7 @@ async function showCompletedReviews() {
                             <div style="flex: 1;">
                                 <h4 style="color: #667eea; margin: 0;">SOL ID: ${review.sol_id} | Visit: ${review.visit_no}</h4>
                                 <p style="margin: 10px 0;">📤 Submitted by: <strong>${review.user_name}</strong></p>
-                                <p style="margin: 5px 0;">✅ Reviewed: ${new Date(review.reviewed_at).toLocaleString()}</p>
+                                <p style="margin: 5px 0;">✅ Reviewed: ${formatDateTimeDDMMYYYY(review.reviewed_at)}</p>
                                 
                                 ${review.review_code ? `
                                     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px; margin-top: 15px;">
@@ -2897,6 +2904,53 @@ function accessReviewDashboard() {
     
     // Show review dashboard
     showReviewDashboard();
+}
+
+// ✅ Utility function to format dates as DD/MM/YYYY
+function formatDateDDMMYYYY(dateString) {
+    if (!dateString) return '';
+    
+    try {
+        // Handle both ISO format (YYYY-MM-DD) and JavaScript Date objects
+        const date = new Date(dateString);
+        
+        if (isNaN(date.getTime())) return dateString; // Return original if invalid
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        
+        return `${day}/${month}/${year}`;
+    } catch (e) {
+        return dateString;
+    }
+}
+
+// ✅ Format Date with Time as DD/MM/YYYY, HH:MM:SS AM/PM
+function formatDateTimeDDMMYYYY(dateString) {
+    if (!dateString) return '';
+    
+    try {
+        const date = new Date(dateString);
+        
+        if (isNaN(date.getTime())) return dateString;
+        
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        
+        let hours = date.getHours();
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        const seconds = String(date.getSeconds()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        
+        hours = hours % 12;
+        hours = hours ? hours : 12; // Convert 0 to 12
+        
+        return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} ${ampm}`;
+    } catch (e) {
+        return dateString;
+    }
 }
 
     </script>
