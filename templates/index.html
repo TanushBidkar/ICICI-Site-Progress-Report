@@ -1437,14 +1437,19 @@ async function autoDetectCurrentUser() {
 /* =========================================
    EVENT LISTENERS & BASIC INFO
    ========================================= */
+/* =========================================
+   AUTO-FETCH PROJECT NAME (SECTION 1)
+   ========================================= */
 document.getElementById('sol_id').addEventListener('input', async function() {
     const solId = this.value;
     
+    // 1. Always copy SOL ID to Branch Code
     if(solId) {
         document.getElementById('branch_code').value = solId;
     }
 
-    if (solId) {
+    // 2. Check Firebase if this SOL ID exists
+    if (solId.length > 3) { // Only check if ID is meaningful (e.g., > 3 chars)
         try {
             const response = await fetch('/get-project-name', {
                 method: 'POST',
@@ -1452,7 +1457,9 @@ document.getElementById('sol_id').addEventListener('input', async function() {
                 body: JSON.stringify({sol_id: solId})
             });
             const data = await response.json();
-            if (data.found) {
+            
+            // 3. If found, auto-fill. If not (first time), leave blank.
+            if (data.found && data.project_name) {
                 document.getElementById('project_name').value = data.project_name;
             }
         } catch (e) {
@@ -1823,13 +1830,18 @@ async function checkExistingData() {
     if (!solId || !visitNo) return;
     
     try {
+        console.log(`🔍 Checking for existing data: SOL ID=${solId}, Visit=${visitNo}`);
+        
         const response = await fetch('/check-existing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ sol_id: solId, visit_no: visitNo })
         });
+        
         const result = await response.json();
+        console.log('📦 Server response:', result);
 
+        // Load previous visit data first
         const currentVisit = parseInt(visitNo);
         for (let v = 1; v < currentVisit; v++) {
             const prevResponse = await fetch('/check-existing', {
@@ -1839,40 +1851,209 @@ async function checkExistingData() {
             });
             const prevResult = await prevResponse.json();
             if (prevResult.exists && prevResult.data) {
+                console.log(`📥 Loading previous visit ${v} data`);
                 fillPreviousVisitData(prevResult.data, v);
             }
         }
 
+        // If current visit data exists
         if (result.exists && result.data) {
-            if (confirm('Existing data found for Visit ' + visitNo + '. Load and edit?')) {
+            console.log(`✅ Found existing data at: ${result.location}`);
+            console.log(`📊 Data contains ${Object.keys(result.data).length} fields`);
+            
+            // Show confirmation
+            if (confirm(`Existing data found for Visit ${visitNo}. Load and edit?`)) {
+                console.log('👤 User confirmed - loading data...');
+                
+                // Fill current visit data
                 fillCurrentVisitData(result.data);
+                
+                // Load Step 3 entries (photos)
                 await loadStep3Entries(result.data);
+                
+                console.log('✅ All data loaded successfully');
+                showAlert('Data loaded successfully!', 'info');
+            } else {
+                console.log('❌ User cancelled loading');
             }
+        } else {
+            console.log('ℹ️ No existing data found - starting fresh');
         }
     } catch (error) {
-        console.error('Error checking existing data:', error);
+        console.error('❌ Error checking existing data:', error);
+        showAlert('Error loading data: ' + error.message, 'warning');
     }
 }
 
 function fillCurrentVisitData(data) {
-    for (let key in data) {
-        const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
-        if (element) {
-            element.value = data[key];
+    console.log('📥 Loading existing data into form...', data);
+    
+    // Section 1: Basic Information
+    if (data.sol_id) document.getElementById('sol_id').value = data.sol_id;
+    if (data.project_name) document.getElementById('project_name').value = data.project_name;
+    if (data.visit_no) document.getElementById('visit_no').value = data.visit_no;
+    
+    // Section 2: Progress Report
+    if (data.branch_area) document.getElementById('branch_area').value = data.branch_area;
+    if (data.branch_code) document.getElementById('branch_code').value = data.branch_code;
+    if (data.date_of_visit) document.getElementById('date_of_visit').value = data.date_of_visit;
+    
+    // Fill all milestone percentages
+    const milestones = [
+        'demolition', 'block_work', 'internal_plaster', 'rcc_wall', 'pcc_work', 
+        'pop_punning', 'waterproofing', 'flooring', 'dado', 'painting', 'plumbing',
+        'partition', 'paneling', 'door_window', 'false_ceiling', 'loose_furniture',
+        'alum_skirting', 'window_blind', 'signage',
+        'pipe_conduit', 'raceway', 'wiring', 'fixtures', 'main_lt',
+        'hvac_indoor', 'hvac_wiring', 'hvac_outdoor',
+        'cms_pipe', 'cms_wiring', 'cms_fixture'
+    ];
+    
+    // Fill percentages for all visits
+    milestones.forEach(milestone => {
+        for (let visit = 1; visit <= 4; visit++) {
+            const fieldName = `${milestone}_visit${visit}`;
+            if (data[fieldName]) {
+                const element = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+                if (element) {
+                    element.value = data[fieldName];
+                }
+            }
         }
-    }
-    const count = parseInt(data.other_count) || 0;
+        
+        // Fill remarks
+        const remarkField = `${milestone}_remark`;
+        if (data[remarkField]) {
+            const element = document.getElementById(remarkField) || document.querySelector(`[name="${remarkField}"]`);
+            if (element) {
+                element.value = data[remarkField];
+            }
+        }
+    });
+    
+    // Fill "Others" section - FIXED: Use let instead of const
+    let loadedOtherCount = parseInt(data.other_count) || 0;
     document.getElementById('othersContainer').innerHTML = '';
-    otherCount = 0;
-    for(let i=0; i<count; i++) {
+    otherCount = 0;  // Reset global counter
+    
+    for (let i = 0; i < loadedOtherCount; i++) {
         addOtherEntry();
-        document.querySelector(`input[name="other_item_${i}"]`).value = data[`other_item_${i}`] || '';
-        for(let v=1; v<=4; v++) {
-            document.querySelector(`input[name="other_item_${i}_visit${v}"]`).value = data[`other_item_${i}_visit${v}`] || '';
+        
+        const itemName = data[`other_item_${i}`];
+        if (itemName) {
+            const itemInput = document.querySelector(`input[name="other_item_${i}"]`);
+            if (itemInput) itemInput.value = itemName;
+            
+            for (let v = 1; v <= 4; v++) {
+                const visitInput = document.querySelector(`input[name="other_item_${i}_visit${v}"]`);
+                if (visitInput && data[`other_item_${i}_visit${v}`]) {
+                    visitInput.value = data[`other_item_${i}_visit${v}`];
+                }
+            }
+            
+            const remarkInput = document.querySelector(`input[name="other_item_${i}_remark"]`);
+            if (remarkInput && data[`other_item_${i}_remark`]) {
+                remarkInput.value = data[`other_item_${i}_remark`];
+            }
         }
-        document.querySelector(`input[name="other_item_${i}_remark"]`).value = data[`other_item_${i}_remark`] || '';
     }
+    
+    // Fill Prepared By and Checked By
+    if (data.prepared_by) {
+        const preparedByEl = document.getElementById('prepared_by') || document.querySelector('[name="prepared_by"]');
+        if (preparedByEl) preparedByEl.value = data.prepared_by;
+    }
+    
+    if (data.checked_by) {
+        const checkedByEl = document.getElementById('checked_by') || document.querySelector('[name="checked_by"]');
+        if (checkedByEl) checkedByEl.value = data.checked_by;
+    }
+    
+    // Section 4: Quality and Critical Challenges
+    if (data.quality_project_title) {
+        const el = document.getElementById('quality_project_title');
+        if (el) el.value = data.quality_project_title;
+    }
+    if (data.quality_branch_area) {
+        const el = document.getElementById('quality_branch_area');
+        if (el) el.value = data.quality_branch_area;
+    }
+    if (data.civil_vendor) {
+        const el = document.getElementById('civil_vendor');
+        if (el) el.value = data.civil_vendor;
+    }
+    if (data.hvac_vendor) {
+        const el = document.getElementById('hvac_vendor');
+        if (el) el.value = data.hvac_vendor;
+    }
+    if (data.project_start_date) {
+        const el = document.getElementById('project_start_date');
+        if (el) el.value = data.project_start_date;
+    }
+    if (data.planned_handover_date) {
+        const el = document.getElementById('planned_handover_date');
+        if (el) el.value = data.planned_handover_date;
+    }
+    if (data.actual_handover_date) {
+        const el = document.getElementById('actual_handover_date');
+        if (el) el.value = data.actual_handover_date;
+    }
+    if (data.quality_date_of_visit) {
+        const el = document.getElementById('quality_date_of_visit');
+        if (el) el.value = data.quality_date_of_visit;
+    }
+    
+    // Fill Quality Observations
+    for (let i = 0; i < 6; i++) {
+        const obsElement = document.querySelector(`[name="quality_observation_${i}"]`);
+        if (obsElement && data[`quality_observation_${i}`]) {
+            obsElement.value = data[`quality_observation_${i}`];
+        }
+    }
+    
+    // Fill Site Delay Reasons
+    for (let i = 0; i < 6; i++) {
+        const delayElement = document.querySelector(`[name="site_delay_reason_${i}"]`);
+        if (delayElement && data[`site_delay_reason_${i}`]) {
+            delayElement.value = data[`site_delay_reason_${i}`];
+        }
+    }
+    
+    // Fill Collaborative Challenges
+    for (let i = 0; i < 6; i++) {
+        const challengeElement = document.querySelector(`[name="collaborative_challenge_${i}"]`);
+        if (challengeElement && data[`collaborative_challenge_${i}`]) {
+            challengeElement.value = data[`collaborative_challenge_${i}`];
+        }
+    }
+    
+    // Fill Criticalities
+    for (let i = 0; i < 6; i++) {
+        const criticalElement = document.querySelector(`[name="criticality_${i}"]`);
+        if (criticalElement && data[`criticality_${i}`]) {
+            criticalElement.value = data[`criticality_${i}`];
+        }
+    }
+    
+    // Fill Hindrances
+    for (let i = 0; i < 6; i++) {
+        const hindranceElement = document.querySelector(`[name="hindrance_${i}"]`);
+        if (hindranceElement && data[`hindrance_${i}`]) {
+            hindranceElement.value = data[`hindrance_${i}`];
+        }
+    }
+    
+    // Fill Others (Quality section)
+    for (let i = 0; i < 6; i++) {
+        const otherElement = document.querySelector(`[name="other_${i}"]`);
+        if (otherElement && data[`other_${i}`]) {
+            otherElement.value = data[`other_${i}`];
+        }
+    }
+    
+    console.log('✅ All data loaded into form');
 }
+
 
 function fillPreviousVisitData(data, visitNum) {
     const inputs = document.querySelectorAll(`input[name$="_visit${visitNum}"]`);
@@ -1894,39 +2075,86 @@ async function loadStep3Entries(data) {
     const solId = document.getElementById('sol_id').value;
     const visitNo = document.getElementById('visit_no').value;
     
+    console.log('📸 Loading Step 3 entries...', data);
+    
+    // Work Progress
     const wCount = parseInt(data.work_count) || 0;
     document.getElementById('workProgressContainer').innerHTML = '';
     workCount = 0;
-    for(let i=0; i<wCount; i++) {
+    
+    console.log(`Loading ${wCount} work entries`);
+    for (let i = 0; i < wCount; i++) {
         addWorkEntry();
-        document.querySelector(`[name="work_milestone_${i}"]`).value = data[`work_milestone_${i}`] || '';
-        document.querySelector(`[name="work_desc_${i}"]`).value = data[`work_desc_${i}`] || '';
-        document.querySelector(`[name="work_remark_${i}"]`).value = data[`work_remark_${i}`] || '';
+        
+        const milestoneEl = document.querySelector(`[name="work_milestone_${i}"]`);
+        if (milestoneEl && data[`work_milestone_${i}`]) {
+            milestoneEl.value = data[`work_milestone_${i}`];
+        }
+        
+        const descEl = document.querySelector(`[name="work_desc_${i}"]`);
+        if (descEl && data[`work_desc_${i}`]) {
+            descEl.value = data[`work_desc_${i}`];
+        }
+        
+        const remarkEl = document.querySelector(`[name="work_remark_${i}"]`);
+        if (remarkEl && data[`work_remark_${i}`]) {
+            remarkEl.value = data[`work_remark_${i}`];
+        }
     }
-
+    
+    // Quality Observations
     const qCount = parseInt(data.quality_count) || 0;
     document.getElementById('qualityContainer').innerHTML = '';
     qualityCount = 0;
-    for(let i=0; i<qCount; i++) {
+    
+    console.log(`Loading ${qCount} quality entries`);
+    for (let i = 0; i < qCount; i++) {
         addQualityEntry();
-        document.querySelector(`[name="qual_item_${i}"]`).value = data[`qual_item_${i}`] || '';
-        document.querySelector(`[name="qual_desc_${i}"]`).value = data[`qual_desc_${i}`] || '';
-        document.querySelector(`[name="qual_remark_${i}"]`).value = data[`qual_remark_${i}`] || '';
+        
+        const itemEl = document.querySelector(`[name="qual_item_${i}"]`);
+        if (itemEl && data[`qual_item_${i}`]) {
+            itemEl.value = data[`qual_item_${i}`];
+        }
+        
+        const descEl = document.querySelector(`[name="qual_desc_${i}"]`);
+        if (descEl && data[`qual_desc_${i}`]) {
+            descEl.value = data[`qual_desc_${i}`];
+        }
+        
+        const remarkEl = document.querySelector(`[name="qual_remark_${i}"]`);
+        if (remarkEl && data[`qual_remark_${i}`]) {
+            remarkEl.value = data[`qual_remark_${i}`];
+        }
     }
-
+    
+    // Make/Model
     const mCount = parseInt(data.make_count) || 0;
     document.getElementById('makeModelContainer').innerHTML = '';
     makeCount = 0;
-    for(let i=0; i<mCount; i++) {
+    
+    console.log(`Loading ${mCount} make/model entries`);
+    for (let i = 0; i < mCount; i++) {
         addMakeModelEntry();
-        document.querySelector(`[name="make_item_${i}"]`).value = data[`make_item_${i}`] || '';
-        document.querySelector(`[name="make_observed_${i}"]`).value = data[`make_observed_${i}`] || '';
-        document.querySelector(`[name="make_remark_${i}"]`).value = data[`make_remark_${i}`] || '';
+        
+        const itemEl = document.querySelector(`[name="make_item_${i}"]`);
+        if (itemEl && data[`make_item_${i}`]) {
+            itemEl.value = data[`make_item_${i}`];
+        }
+        
+        const observedEl = document.querySelector(`[name="make_observed_${i}"]`);
+        if (observedEl && data[`make_observed_${i}`]) {
+            observedEl.value = data[`make_observed_${i}`];
+        }
+        
+        const remarkEl = document.querySelector(`[name="make_remark_${i}"]`);
+        if (remarkEl && data[`make_remark_${i}`]) {
+            remarkEl.value = data[`make_remark_${i}`];
+        }
     }
     
+    // Load images from Firebase
     await loadImagesFromFirebase(solId, visitNo);
 }
-
 async function loadImagesFromFirebase(sol_id, visit_no) {
     const categories = [
         { type: 'work', count: workCount },
@@ -1937,6 +2165,7 @@ async function loadImagesFromFirebase(sol_id, visit_no) {
     for (const category of categories) {
         for (let i = 0; i < category.count; i++) {
             try {
+                // ✅ FIX: Let backend search all paths automatically
                 const response = await fetch('/get-image-from-firebase', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1945,6 +2174,7 @@ async function loadImagesFromFirebase(sol_id, visit_no) {
                         visit_no: visit_no,
                         image_type: category.type,
                         image_index: i
+                        // No region parameter - backend will search everywhere
                     })
                 });
                 
