@@ -1167,23 +1167,23 @@
         </div>
 
         <div class="form-group">
-    <label for="user_email_input">Your Email *</label>
-    <input type="email" id="user_email_input" required placeholder="your.email@company.com" readonly style="background-color: #f0f0f0;">
-</div>
+            <label for="user_email_input">Your Email *</label>
+            <input type="email" id="user_email_input" required placeholder="your.email@company.com">
+        </div>
 
-<div class="form-group">
-    <label for="user_name_input">Your Name *</label>
-    <input type="text" id="user_name_input" required placeholder="Your Full Name" readonly style="background-color: #f0f0f0;">
-</div>
+        <div class="form-group">
+            <label for="user_name_input">Your Name *</label>
+            <input type="text" id="user_name_input" required placeholder="Your Full Name">
+        </div>
 
         <div class="form-group">
             <label for="sol_id_confirm">SOL ID *</label>
-            <input type="text" id="sol_id_confirm" required readonly style="background-color: #f0f0f0;">
+            <input type="text" id="sol_id_confirm" required>
         </div>
 
         <div class="form-group">
             <label for="visit_no_confirm">Visit Number *</label>
-            <input type="text" id="visit_no_confirm" required readonly style="background-color: #f0f0f0;">
+            <input type="text" id="visit_no_confirm" required>
         </div>
     </div>
 
@@ -1374,19 +1374,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             console.log('✅ Email loaded from URL:', emailFromURL);
             window.history.replaceState({}, document.title, window.location.pathname);
-        } else {
-            // ✅ METHOD 3: Try localStorage (same domain only)
-            const storedEmail = localStorage.getItem('currentUser');
-            const storedName = localStorage.getItem('userName');
-            
-            if (storedEmail) {
-                currentUserEmail = storedEmail;
-                currentUserName = storedName || '';
-                console.log('✅ Email loaded from localStorage:', storedEmail);
-            } else {
-                console.log('⚠️ No user email found');
-            }
-        }
+        } // ❌ DISABLED: Do not load from local storage automatically
+    // This ensures every refresh requires a fresh login
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('userName');
+    currentUserEmail = '';
+    currentUserName = '';
+    currentRegion = '';
     }
     
     // Auto-detect region for reviewers (after email is loaded)
@@ -2714,97 +2708,134 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ✅ Function to open the Login Modal
-    function openReviewsFromHome() {
-        console.log('🔍 Opening reviews dashboard...');
-        
-        if (currentUserEmail) {
-            console.log('✅ User already logged in');
-            showReviewDashboard();
-            return;
-        }
-        
-        // Show the Login Modal
-        const modalHTML = `
-            <div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
-                <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
-                    <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to View Reviews</h2>
-                    
-                    <div style="margin-bottom: 20px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
-                        <input type="email" id="loginEmail" placeholder="your.email@cushwake.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                    </div>
-                    
-                    <div style="margin-bottom: 25px;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
-                        <input type="password" id="loginPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
-                    </div>
-                    
-                    <div id="loginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
-                    
-                    <div style="display: flex; gap: 15px; justify-content: center;">
-                        <button class="btn btn-secondary" onclick="document.getElementById('loginModal').remove()">Cancel</button>
-                        <button class="btn btn-primary" onclick="verifyLogin()">Login</button>
-                    </div>
+   function openReviewsFromHome() {
+    console.log('🔍 Opening reviews dashboard...');
+    
+    // ✅ FORCE LOGOUT: Clear all session variables immediately
+    // This ensures the popup shows every single time you click the button
+    currentUserEmail = '';
+    currentUserName = '';
+    currentRegion = '';
+    localStorage.removeItem('currentUser');
+    localStorage.removeItem('userName');
+    
+    // Show the Login Modal WITH Region Selection
+    const modalHTML = `
+        <div id="loginModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; display: flex; align-items: center; justify-content: center;">
+            <div style="background: white; border-radius: 15px; padding: 40px; max-width: 450px; width: 90%;">
+                <h2 style="color: #667eea; margin-bottom: 30px; text-align: center;">🔐 Login to View Reviews</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Select Region *</label>
+                    <select id="loginRegion" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                        <option value="">Choose Region</option>
+                        <option value="West">West</option>
+                        <option value="East">East</option>
+                        <option value="South">South</option>
+                        <option value="North">North</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Email *</label>
+                    <input type="email" id="loginEmail" placeholder="your.email@cushwake.com" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div style="margin-bottom: 25px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 8px;">Password *</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em;">
+                </div>
+                
+                <div id="loginError" style="display: none; background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center;"></div>
+                
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button class="btn btn-secondary" onclick="document.getElementById('loginModal').remove()">Cancel</button>
+                    <button class="btn btn-primary" onclick="verifyLogin()">Login & View</button>
                 </div>
             </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
 
     // ✅ Function to verify login with backend
     async function verifyLogin() {
-        const email = document.getElementById('loginEmail').value.trim();
-        const password = document.getElementById('loginPassword').value.trim();
-        const errorDiv = document.getElementById('loginError');
-        const loginBtn = document.querySelector('#loginModal .btn-primary');
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    const selectedRegion = document.getElementById('loginRegion').value; // Get region from dropdown
+    const errorDiv = document.getElementById('loginError');
+    const loginBtn = document.querySelector('#loginModal .btn-primary');
 
-        if (!email || !password) {
-            errorDiv.textContent = 'Please enter both email and password';
-            errorDiv.style.display = 'block';
-            return;
-        }
+    if (!email || !password) {
+        errorDiv.textContent = 'Please enter both email and password';
+        errorDiv.style.display = 'block';
+        return;
+    }
 
-        // Show loading state
-        loginBtn.textContent = 'Verifying...';
-        loginBtn.disabled = true;
+    // Show loading state
+    loginBtn.textContent = 'Verifying...';
+    loginBtn.disabled = true;
 
-        try {
-            const response = await fetch('/verify-user-login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ email, password })
-            });
+    try {
+        const response = await fetch('/verify-user-login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ email, password })
+        });
 
-            const result = await response.json();
+        const result = await response.json();
 
-            if (result.success) {
-                // Login Success
-                currentUserEmail = result.email;
-                currentUserName = result.name;
-                currentRegion = result.region || '';
-                
-                // Save session
-                localStorage.setItem('currentUser', result.email);
-                localStorage.setItem('userName', result.name);
-                
-                // Close modal and show dashboard
-                document.getElementById('loginModal').remove();
-                showReviewDashboard();
+        if (result.success) {
+            // Login Success
+            currentUserEmail = result.email;
+            currentUserName = result.name;
+            
+            // ✅ CRITICAL FIX: If user is a Reviewer, use their assigned region. 
+            // If they are a normal user, use the region they selected in the dropdown.
+            if (result.region) {
+                currentRegion = result.region; // User is a Reviewer (auto-assigned)
             } else {
-                // Show error from backend
-                errorDiv.textContent = result.error || 'Login failed';
-                errorDiv.style.display = 'block';
+                if (!selectedRegion) {
+                    errorDiv.textContent = 'Please select a Region to view your reports.';
+                    errorDiv.style.display = 'block';
+                    loginBtn.textContent = 'Login & View';
+                    loginBtn.disabled = false;
+                    return;
+                }
+                currentRegion = selectedRegion; // User is a Submitter (manual selection)
             }
-        } catch (error) {
-            errorDiv.textContent = 'Server error. Please try again.';
+            
+            // Save session
+            localStorage.setItem('currentUser', result.email);
+            localStorage.setItem('userName', result.name);
+            
+            // Close modal and show dashboard
+            document.getElementById('loginModal').remove();
+            showReviewDashboard();
+        } else {
+            // Show error from backend
+            errorDiv.textContent = result.error || 'Login failed';
             errorDiv.style.display = 'block';
-            console.error(error);
-        } finally {
-            // Reset button
-            loginBtn.textContent = 'Login';
-            loginBtn.disabled = false;
+        }
+    } catch (error) {
+        errorDiv.textContent = 'Server error. Please try again.';
+        errorDiv.style.display = 'block';
+        console.error(error);
+    } finally {
+        // Reset button if we didn't return early
+        if (loginBtn.disabled && loginBtn.textContent !== 'Verifying...') {
+             // button state is handled inside success/error blocks usually, 
+             // but ensuring it resets on error catch
+             loginBtn.textContent = 'Login & View';
+             loginBtn.disabled = false;
+        } else if (!document.getElementById('loginModal')) {
+            // Modal removed, nothing to do
+        } else {
+             loginBtn.textContent = 'Login & View';
+             loginBtn.disabled = false;
         }
     }
+}
 // ✅ NEW FUNCTION - This is what makes reviewers skip region selection
 function checkReviewerStatus() {
     const accessEmailInput = document.getElementById('accessEmail');
