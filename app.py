@@ -1137,6 +1137,7 @@ def fill_quality_sheet(wb, data):
     current_row += 1
     
     # Fill Quality Observations data
+    # Fill Quality Observations data
     filled_count = 0
     for i in range(6):
         obs_value = data.get(f'quality_observation_{i}', '').strip()
@@ -1146,10 +1147,15 @@ def fill_quality_sheet(wb, data):
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
+            # Merge B, C, D columns for the observation text
+            ws.merge_cells(f'B{current_row}:D{current_row}')
             ws[f'B{current_row}'] = obs_value
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            ws.row_dimensions[current_row].height = None  # Auto height
+            
+            # ✅ CALCULATE ROW HEIGHT BASED ON TEXT LENGTH
+            row_height = calculate_row_height(obs_value, font_size=12, cell_width=50)
+            ws.row_dimensions[current_row].height = row_height
             
             for col in ['A', 'B', 'C', 'D']:
                 ws[f'{col}{current_row}'].border = thin_border
