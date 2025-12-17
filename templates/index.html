@@ -935,7 +935,7 @@
         <input type="text" id="quality_branch_area" name="quality_branch_area" readonly style="background-color: #f0f0f0;">
     </div>
     <div class="form-group">
-        <label for="civil_vendor">Civil Vendor</label>
+        <label for="civil_vendor">TKO Vendor</label>
         <input type="text" id="civil_vendor" name="civil_vendor">
     </div>
     <div class="form-group">
@@ -1498,22 +1498,27 @@ async function nextSection(section) {
 
     const nextBtn = currentForm.querySelector('.btn-primary');
     if(nextBtn) {
-        const originalText = nextBtn.innerText;
+        // ✅ Prevent multiple clicks
+        if (nextBtn.disabled) return;
+        
+        const originalText = nextBtn.innerHTML;
         nextBtn.disabled = true;
-        nextBtn.innerText = "Processing...";
+        nextBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Processing...</span>';
         nextBtn.style.opacity = "0.7";
+        nextBtn.style.cursor = "not-allowed";
         
         if (section === 1) {
             try {
                 await checkExistingData();
             } catch (error) {
                 console.error("Error checking data:", error);
+                nextBtn.disabled = false;
+                nextBtn.innerHTML = originalText;
+                nextBtn.style.opacity = "1";
+                nextBtn.style.cursor = "pointer";
+                return;
             }
         }
-
-        nextBtn.disabled = false;
-        nextBtn.innerText = originalText;
-        nextBtn.style.opacity = "1";
     }
 
     document.getElementById(`section${section}`).classList.remove('active');
@@ -2402,18 +2407,21 @@ async function submitForReview() {
         return;
     }
     
-    // ✅ NEW: If user didn't provide custom name, auto-generate recommended format
+    // ✅ Get button and prevent multiple clicks
+    const submitBtn = document.getElementById('submitReviewBtn');
+    if (submitBtn.disabled) return;
+    
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Submitting...</span>';
+    submitBtn.style.cursor = 'not-allowed';
+    
     let finalFilename = customFilename;
     
     if (!finalFilename) {
-        // Try to get branch area from the form
         const solId = document.getElementById('sol_id_confirm').value;
         let projectVal = document.getElementById('project_name').value || 'Branch';
-        
-        // Clean up name
         projectVal = projectVal.trim().replace(/\s+/g, '_');
-        
-        // Format: ICICI_Dadar_3004_report.xlsx
         finalFilename = `ICICI_${projectVal}_${solId}_report.xlsx`;
     }
     
@@ -2425,7 +2433,7 @@ async function submitForReview() {
     formData.append('user_name', userName);
     formData.append('sol_id', solId);
     formData.append('visit_no', visitNo);
-    formData.append('custom_filename', finalFilename);  // ✅ Use the final filename
+    formData.append('custom_filename', finalFilename);
     formData.append('user_comments', userComments);
     
     try {
@@ -2446,9 +2454,17 @@ async function submitForReview() {
            showReviewDashboard();
        } else {
             alert('Error: ' + result.error);
+            // ✅ Re-enable button on error
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            submitBtn.style.cursor = 'pointer';
         }
     } catch (error) {
         alert('Network error: ' + error.message);
+        // ✅ Re-enable button on error
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        submitBtn.style.cursor = 'pointer';
     }
 }
 function goBackToStep4() {
@@ -2540,8 +2556,8 @@ async function showPendingReviews() {
                             <span style="background: #ff9800; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; white-space: nowrap;">PENDING</span>
                         </div>
                         
-                        <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-    <button class="btn btn-primary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
+                      <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+    <button class="btn btn-primary" id="downloadPendingBtn_${review.session_id}" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
         📥 Download Excel
     </button>
     
@@ -2552,10 +2568,10 @@ async function showPendingReviews() {
     ` : ''}
     
     ${!isReviewer ? `
-        <button class="btn" style="background: #dc3545; color: white;" onclick="deletePendingReview('${review.session_id}', '${review.region}')">
-            🗑️ Delete Submission
-        </button>
-    ` : ''}
+    <button class="btn" id="deletePendingBtn_${review.session_id}" style="background: #dc3545; color: white;" onclick="deletePendingReview('${review.session_id}', '${review.region}')">
+        🗑️ Delete Submission
+    </button>
+` : ''}
 </div>
                     </div>
                 `;
@@ -2632,26 +2648,27 @@ ${review.reviewer_comments ? `
                         </div>
                         
                         <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-                            <button class="btn btn-primary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'completed')">
-                                📥 Download Original
-                            </button>
-                            
-                            ${review.corrected_file_path ? `
-                                <button class="btn btn-secondary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'corrected', 'completed')">
-                                    📥 Download Corrected
-                                </button>
-                            ` : ''}
-                            
-                            ${isApproved ? `
-                                <button class="btn" style="background: #667eea; color: white;" onclick="downloadFromFirebase('${review.region}', '${review.sol_id}', '${review.visit_no}')">
-                                    ☁️ Download from Firebase
-                                </button>
-                            ` : ''}
+    <button class="btn btn-primary" id="downloadOrigBtn_${review.session_id}" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'completed')">
+        📥 Download Original
+    </button>
+    
+    ${review.corrected_file_path ? `
+        <button class="btn btn-secondary" id="downloadCorrBtn_${review.session_id}" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'corrected', 'completed')">
+            📥 Download Corrected
+        </button>
+    ` : ''}
+    
+    ${isApproved ? `
+        <button class="btn" id="downloadFirebaseBtn_${review.session_id}" style="background: #667eea; color: white;" onclick="downloadFromFirebase('${review.region}', '${review.sol_id}', '${review.visit_no}')">
+            ☁️ Download from Firebase
+        </button>
+    ` : ''}
 
-                            <button class="btn" style="background: #dc3545; color: white;" onclick="deleteCompletedReview('${review.session_id}', '${review.region}', ${isApproved})">
+    <button class="btn" id="deleteBtn_${review.session_id}" style="background: #dc3545; color: white;" onclick="deleteCompletedReview('${review.session_id}', '${review.region}', ${isApproved})">
         🗑️ Delete ${isApproved ? 'Approved' : 'Rejected'} Report
     </button>
-                        </div>
+</div>
+                        
                     </div>
                 `;
             });
@@ -2756,6 +2773,29 @@ const REGION_REVIEWERS = {
 };
 
 async function downloadReviewFile(sessionId, region, fileType, status) {
+    // Determine which button to disable based on context
+    let btnId;
+    if (status === 'pending') {
+        btnId = `downloadPendingBtn_${sessionId}`;
+    } else if (fileType === 'original') {
+        btnId = `downloadOrigBtn_${sessionId}`;
+    } else {
+        btnId = `downloadCorrBtn_${sessionId}`;
+    }
+    
+    const btn = document.getElementById(btnId);
+    
+    if (btn && btn.disabled) return; // Prevent multiple clicks
+    
+    let originalText = '';
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; display: inline-block;"></div> Downloading...';
+        btn.style.opacity = "0.7";
+        btn.style.cursor = "not-allowed";
+    }
+    
     try {
         const response = await fetch('/download-review-file', {
             method: 'POST',
@@ -2771,7 +2811,6 @@ async function downloadReviewFile(sessionId, region, fileType, status) {
         if (response.ok) {
             const blob = await response.blob();
             
-            // ✅ Fix: Extract filename from Content-Disposition header
             let filename = 'download.xlsx';
             const disposition = response.headers.get('Content-Disposition');
             if (disposition && disposition.indexOf('attachment') !== -1) {
@@ -2785,7 +2824,7 @@ async function downloadReviewFile(sessionId, region, fileType, status) {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename; // Use the backend-provided name
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -2796,6 +2835,14 @@ async function downloadReviewFile(sessionId, region, fileType, status) {
         }
     } catch (error) {
         alert('Network error: ' + error.message);
+    } finally {
+        // Re-enable button after download completes (success or failure)
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        }
     }
 }
 async function downloadFromFirebase(region, solId, visitNo) {
@@ -2842,7 +2889,7 @@ function openReviewModal(sessionId, region, solId, visitNo) {
                 
                 <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 30px;">
                     <button class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="submitReviewDecision('${sessionId}', '${region}', '${solId}', '${visitNo}')" style="background: #28a745 !important;">
+                    <button class="btn btn-primary" id="submitReviewBtn_${sessionId}" onclick="submitReviewDecision('${sessionId}', '${region}', '${solId}', '${visitNo}')" style="background: #28a745 !important;">
                         Submit Review
                     </button>
                 </div>
@@ -2909,17 +2956,37 @@ function reviewAndCheckStatus() {
 }
 
 async function submitReviewDecision(sessionId, region, solId, visitNo) {
+    // ✅ Get button and prevent multiple clicks
+    const submitBtn = document.getElementById(`submitReviewBtn_${sessionId}`);
+    if (submitBtn.disabled) return; // Already processing, ignore click
+    
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><div class="spinner" style="width: 16px; height: 16px; border-width: 2px;"></div> Submitting...</span>';
+    submitBtn.style.opacity = "0.7";
+    submitBtn.style.cursor = "not-allowed";
+    
     const decision = document.getElementById('reviewDecision').value;
     const comments = document.getElementById('reviewComments').value.trim();
     const correctedFile = document.getElementById('correctedExcelFile').files[0];
     
     if (!decision) {
         alert('Please select a decision');
+        // ✅ Re-enable button on validation error
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
         return;
     }
     
     if (decision === 'rejected' && !comments) {
         alert('Comments are required for rejection');
+        // ✅ Re-enable button on validation error
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
         return;
     }
     
@@ -2962,9 +3029,19 @@ async function submitReviewDecision(sessionId, region, solId, visitNo) {
             showPendingReviews();
         } else {
             alert('Error: ' + result.error);
+            // ✅ Re-enable button on server error
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+            submitBtn.style.opacity = "1";
+            submitBtn.style.cursor = "pointer";
         }
     } catch (error) {
         alert('Network error: ' + error.message);
+        // ✅ Re-enable button on network error
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        submitBtn.style.opacity = "1";
+        submitBtn.style.cursor = "pointer";
     }
 }
 
@@ -3307,8 +3384,21 @@ function formatDateTimeDDMMYYYY(dateString) {
 
 // ✅ NEW: Delete Pending Review
 async function deletePendingReview(sessionId, region) {
+    const btn = document.getElementById(`deletePendingBtn_${sessionId}`);
+    
+    if (btn && btn.disabled) return; // Prevent multiple clicks
+    
     if (!confirm('⚠️ Are you sure you want to delete this pending submission?\n\nThis will permanently remove:\n• Your uploaded Excel file\n• All submission data\n\nThis action CANNOT be undone.')) {
         return;
+    }
+    
+    let originalText = '';
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; display: inline-block;"></div> Deleting...';
+        btn.style.opacity = "0.7";
+        btn.style.cursor = "not-allowed";
     }
     
     try {
@@ -3329,20 +3419,48 @@ async function deletePendingReview(sessionId, region) {
             showPendingReviews(); // Refresh the list
         } else {
             alert('❌ Error: ' + (result.error || 'Unknown error'));
+            // Re-enable button on error
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+            }
         }
     } catch (error) {
         alert('❌ Network error: ' + error.message);
+        // Re-enable button on error
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        }
     }
 }
 
+
 // ✅ NEW: Delete Completed Review
 async function deleteCompletedReview(sessionId, region, isApproved) {
+    const btn = document.getElementById(`deleteBtn_${sessionId}`);
+    
+    if (btn && btn.disabled) return; // Prevent multiple clicks
+    
     const warningMessage = isApproved 
         ? '⚠️ WARNING: You are about to delete an APPROVED report!\n\nThis will permanently remove:\n• Your original Excel file\n• Corrected Excel file (if any)\n• The approved report from Firebase\n• All associated images and data\n• Your Review Code\n• This will decrease your Approved Reports count by 1\n\nThis action CANNOT be undone.\n\nAre you absolutely sure?'
         : '⚠️ Are you sure you want to delete this rejected submission?\n\nThis will permanently remove:\n• Your uploaded Excel file\n• Corrected file (if any)\n• All submission data\n\nThis action CANNOT be undone.';
     
     if (!confirm(warningMessage)) {
         return;
+    }
+    
+    let originalText = '';
+    if (btn) {
+        originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width: 16px; height: 16px; border-width: 2px; display: inline-block;"></div> Deleting...';
+        btn.style.opacity = "0.7";
+        btn.style.cursor = "not-allowed";
     }
     
     try {
@@ -3366,10 +3484,23 @@ async function deleteCompletedReview(sessionId, region, isApproved) {
             loadUserApprovedCount();
         } else {
             alert('❌ Error: ' + (result.error || 'Unknown error'));
+            // Re-enable button on error
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+            }
         }
     } catch (error) {
         alert('❌ Network error: ' + error.message);
-        console.error(error);
+        // Re-enable button on error
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        }
     }
 }
 
