@@ -1168,7 +1168,7 @@
 
         <div class="form-group">
             <label for="user_email_input">Your Email *</label>
-            <input type="email" id="user_email_input" required placeholder="your.email@company.com">
+            <input type="email" id="user_email_input" required placeholder="your.email@cushwake.com">
         </div>
 
         <div class="form-group">
@@ -1208,10 +1208,16 @@
         
         <!-- ✅ RENAME DIRECTLY HERE -->
         <div style="margin-top: 15px;">
-            <input type="text" id="custom_filename" placeholder="Rename file (without extension)" 
-                   style="padding: 12px; width: 350px; border: 2px solid #667eea; border-radius: 8px; font-size: 1em;">
-            <p style="color: #666; font-size: 0.85em; margin-top: 5px;">Leave blank to keep original name</p>
-        </div>
+    <label style="font-weight: bold; display: block; margin-bottom: 8px;">
+        Rename File for Review (Optional)
+    </label>
+    <input type="text" id="custom_filename" placeholder="e.g., ICICI_Mumbai_1570_report" 
+           style="padding: 12px; width: 100%; border: 2px solid #667eea; border-radius: 8px; font-size: 1em;">
+    <p style="color: #666; font-size: 0.85em; margin-top: 5px;">
+        📌 Recommended format: ICICI_{BranchName}_{SOL_ID}_report<br>
+        Leave blank to keep: "${document.getElementById('sol_id_confirm')?.value || 'SOL_ID'}_Visit_${document.getElementById('visit_no_confirm')?.value || '1'}.xlsx"
+    </p>
+</div>
     </div>
 </div>
 
@@ -2228,6 +2234,17 @@ async function generateAndDownload() {
     });
 
     formData.append('other_count', otherCount);
+    const branchArea = document.getElementById('branch_area')?.value || '';
+    const solId = document.getElementById('sol_id')?.value || '';
+    
+    if (branchArea) formData.set('branch_area', branchArea);
+    if (solId) formData.set('sol_id', solId);
+    
+    console.log('📤 Sending to backend:', {
+        branch_area: branchArea,
+        sol_id: solId,
+        other_count: otherCount
+    });
 
     async function processCategory(type, count, prefixes) {
         let actualCount = 0;
@@ -2283,20 +2300,30 @@ async function generateAndDownload() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Draft_Report_${document.getElementById('sol_id').value}.xlsx`;
+            
+            // ✅ UPDATED FILENAME LOGIC HERE
+            const solIdVal = document.getElementById('sol_id').value || 'UnknownSOL';
+            let projectVal = document.getElementById('project_name').value || 'Branch';
+            
+            // Clean up name (remove spaces)
+            projectVal = projectVal.trim().replace(/\s+/g, '_');
+            
+            // Set filename: ICICI_Dadar_3004_report.xlsx
+            a.download = `ICICI_${projectVal}_${solIdVal}_report.xlsx`;
+            
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
 
             // After download, go directly to Section 5 (Region & Reviewer Selection)
-document.getElementById('section4').classList.remove('active');
-document.getElementById('section5').classList.add('active');
+            document.getElementById('section4').classList.remove('active');
+            document.getElementById('section5').classList.add('active');
 
-document.getElementById('sol_id_confirm').value = document.getElementById('sol_id').value;
-document.getElementById('visit_no_confirm').value = document.getElementById('visit_no').value;
+            document.getElementById('sol_id_confirm').value = document.getElementById('sol_id').value;
+            document.getElementById('visit_no_confirm').value = document.getElementById('visit_no').value;
 
-updateSteps(5);
-window.scrollTo(0, 0);
+            updateSteps(5);
+            window.scrollTo(0, 0);
         } else {
             const text = await response.text();
             alert('Error: ' + text);
@@ -2368,11 +2395,26 @@ async function submitForReview() {
     const visitNo = document.getElementById('visit_no_confirm').value;
     const file = document.getElementById('reviewExcelUpload').files[0];
     const customFilename = document.getElementById('custom_filename').value.trim();
-    const userComments = document.getElementById('user_comments').value.trim(); // ✅ NEW
+    const userComments = document.getElementById('user_comments').value.trim();
     
     if (!region || !reviewerEmail || !userEmail || !userName || !file) {
         alert('Please fill all required fields and upload the Excel file');
         return;
+    }
+    
+    // ✅ NEW: If user didn't provide custom name, auto-generate recommended format
+    let finalFilename = customFilename;
+    
+    if (!finalFilename) {
+        // Try to get branch area from the form
+        const solId = document.getElementById('sol_id_confirm').value;
+        let projectVal = document.getElementById('project_name').value || 'Branch';
+        
+        // Clean up name
+        projectVal = projectVal.trim().replace(/\s+/g, '_');
+        
+        // Format: ICICI_Dadar_3004_report.xlsx
+        finalFilename = `ICICI_${projectVal}_${solId}_report.xlsx`;
     }
     
     const formData = new FormData();
@@ -2383,8 +2425,8 @@ async function submitForReview() {
     formData.append('user_name', userName);
     formData.append('sol_id', solId);
     formData.append('visit_no', visitNo);
-    formData.append('custom_filename', customFilename);
-    formData.append('user_comments', userComments); // ✅ NEW: Send comments
+    formData.append('custom_filename', finalFilename);  // ✅ Use the final filename
+    formData.append('user_comments', userComments);
     
     try {
         const response = await fetch('/submit-for-review', {
@@ -2397,10 +2439,9 @@ async function submitForReview() {
         if (result.success) {
            alert('✅ Successfully submitted for review!');
            
-           // ✅ FIX: Save these globally so the dashboard knows what to load
            currentUserEmail = userEmail;
            currentRegion = region;
-           localStorage.setItem('currentUser', userEmail); // Optional: remember for next time
+           localStorage.setItem('currentUser', userEmail);
 
            showReviewDashboard();
        } else {
@@ -2499,17 +2540,23 @@ async function showPendingReviews() {
                             <span style="background: #ff9800; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; white-space: nowrap;">PENDING</span>
                         </div>
                         
-                        <div style="margin-top: 20px; display: flex; gap: 15px;">
-                            <button class="btn btn-primary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
-                                📥 Download Excel
-                            </button>
-                            
-                            ${isReviewer ? `
-                                <button class="btn" style="background: #28a745; color: white;" onclick="openReviewModal('${review.session_id}', '${review.region}', '${review.sol_id}', '${review.visit_no}')">
-                                    ✅ Process Review
-                                </button>
-                            ` : ''}
-                        </div>
+                        <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+    <button class="btn btn-primary" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
+        📥 Download Excel
+    </button>
+    
+    ${isReviewer ? `
+        <button class="btn" style="background: #28a745; color: white;" onclick="openReviewModal('${review.session_id}', '${review.region}', '${review.sol_id}', '${review.visit_no}')">
+            ✅ Process Review
+        </button>
+    ` : ''}
+    
+    ${!isReviewer ? `
+        <button class="btn" style="background: #dc3545; color: white;" onclick="deletePendingReview('${review.session_id}', '${review.region}')">
+            🗑️ Delete Submission
+        </button>
+    ` : ''}
+</div>
                     </div>
                 `;
             });
@@ -2562,12 +2609,21 @@ async function showCompletedReviews() {
                                     </div>
                                 ` : ''}
                                 
-                                ${review.reviewer_comments ? `
-                                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
-                                        <strong>💬 Reviewer Comments:</strong>
-                                        <p style="margin: 10px 0 0 0;">${review.reviewer_comments}</p>
-                                    </div>
-                                ` : ''}
+                                <p style="margin: 5px 0;">👤 Reviewed by: <strong>${review.reviewer_name || review.reviewer_email}</strong></p>
+
+${review.user_comments ? `
+    <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #ffc107;">
+        <strong style="color: #856404;">💬 Submitter Comments:</strong>
+        <p style="margin: 5px 0 0 0; color: #856404;">${review.user_comments}</p>
+    </div>
+` : ''}
+
+${review.reviewer_comments ? `
+    <div style="background: #e8f5e9; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #28a745;">
+        <strong style="color: #1b5e20;">💬 Reviewer Comments:</strong>
+        <p style="margin: 5px 0 0 0; color: #1b5e20;">${review.reviewer_comments}</p>
+    </div>
+` : ''}
                             </div>
                             
                             <span style="background: ${isApproved ? '#28a745' : '#dc3545'}; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold;">
@@ -2591,6 +2647,10 @@ async function showCompletedReviews() {
                                     ☁️ Download from Firebase
                                 </button>
                             ` : ''}
+
+                            <button class="btn" style="background: #dc3545; color: white;" onclick="deleteCompletedReview('${review.session_id}', '${review.region}', ${isApproved})">
+        🗑️ Delete ${isApproved ? 'Approved' : 'Rejected'} Report
+    </button>
                         </div>
                     </div>
                 `;
@@ -2607,7 +2667,7 @@ async function showCompletedReviews() {
 
 async function showAllApprovedReports() {
     const container = document.getElementById('reviewsContainer');
-    container.innerHTML = '<div style="text-align:center; padding:40px;"><div class="spinner"></div><p>Loading...</p></div>';
+    container.innerHTML = '<div style="text-align:center; padding:40px;"><div class="spinner"></div><p>Loading reports...</p></div>';
     
     try {
         const response = await fetch('/get-all-approved-reports', {
@@ -2623,17 +2683,29 @@ async function showAllApprovedReports() {
         if (data.reports && data.reports.length > 0) {
             let html = `
                 <h3 style="color: #667eea; margin-bottom: 20px;">📁 All Approved Reports - ${currentRegion} Region</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
             `;
             
             data.reports.forEach(report => {
                 html += `
-                    <div style="background: white; border: 2px solid #667eea; border-radius: 12px; padding: 20px; text-align: center;">
-                        <div style="font-size: 3em; margin-bottom: 10px;">📊</div>
-                        <h4 style="color: #667eea; margin: 10px 0;">SOL ID: ${report.sol_id}</h4>
-                        <p style="color: #666; margin: 5px 0;">Visit: ${report.visit_no}</p>
-                        <a href="${report.download_url}" download="${report.filename}" class="btn btn-primary" style="margin-top: 15px; text-decoration: none; display: inline-block;">
-                            📥 Download
+                    <div style="background: white; border: 2px solid #28a745; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <span style="background:#e8f5e9; color:#28a745; padding:5px 10px; border-radius:15px; font-weight:bold; font-size:0.9em;">Approved</span>
+                            <small style="color:#666;">Visit ${report.visit_no}</small>
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <h4 style="color: #333; margin: 0 0 5px 0;">SOL ID: ${report.sol_id}</h4>
+                            <p style="color: #666; margin: 5px 0; font-size: 0.95em;">
+                                📅 Date: <strong>${report.date_of_visit}</strong>
+                            </p>
+                            <p style="color: #666; margin: 5px 0; font-size: 0.95em; word-break: break-all;">
+                                📂 Branch Name: <br><strong>${report.filename}</strong>
+                            </p>
+                        </div>
+
+                        <a href="${report.download_url}" download="${report.filename}" class="btn" style="background: #667eea; color: white; width: 100%; text-align: center; text-decoration: none; display: block; padding: 10px 0;">
+                            📥 Download Report
                         </a>
                     </div>
                 `;
@@ -2642,9 +2714,10 @@ async function showAllApprovedReports() {
             html += '</div>';
             container.innerHTML = html;
         } else {
-            container.innerHTML = '<div style="text-align:center; padding:60px; color:#999;"><h3>No approved reports available</h3></div>';
+            container.innerHTML = '<div style="text-align:center; padding:60px; color:#999;"><h3>No approved reports found</h3></div>';
         }
     } catch (error) {
+        console.error(error);
         container.innerHTML = '<div style="text-align:center; padding:40px; color:red;">Error loading reports</div>';
     }
 }
@@ -2697,22 +2770,34 @@ async function downloadReviewFile(sessionId, region, fileType, status) {
         
         if (response.ok) {
             const blob = await response.blob();
+            
+            // ✅ Fix: Extract filename from Content-Disposition header
+            let filename = 'download.xlsx';
+            const disposition = response.headers.get('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${fileType}_${sessionId}.xlsx`;
+            a.download = filename; // Use the backend-provided name
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
         } else {
-            alert('Error downloading file');
+            const err = await response.json();
+            alert('Error: ' + (err.error || 'Download failed'));
         }
     } catch (error) {
         alert('Network error: ' + error.message);
     }
 }
-
 async function downloadFromFirebase(region, solId, visitNo) {
     const url = `https://storage.googleapis.com/ai-based-review-tools.firebasestorage.app/ICICI_Site_Progress_Report/${region}/${solId}/Visit_${visitNo}/report.xlsx`;
     
@@ -3217,6 +3302,74 @@ function formatDateTimeDDMMYYYY(dateString) {
         return `${day}/${month}/${year}, ${hours}:${minutes}:${seconds} ${ampm}`;
     } catch (e) {
         return dateString;
+    }
+}
+
+// ✅ NEW: Delete Pending Review
+async function deletePendingReview(sessionId, region) {
+    if (!confirm('⚠️ Are you sure you want to delete this pending submission?\n\nThis will permanently remove:\n• Your uploaded Excel file\n• All submission data\n\nThis action CANNOT be undone.')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/delete-pending-review', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                session_id: sessionId,
+                region: region,
+                user_email: currentUserEmail
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Submission deleted successfully!');
+            showPendingReviews(); // Refresh the list
+        } else {
+            alert('❌ Error: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('❌ Network error: ' + error.message);
+    }
+}
+
+// ✅ NEW: Delete Completed Review
+async function deleteCompletedReview(sessionId, region, isApproved) {
+    const warningMessage = isApproved 
+        ? '⚠️ WARNING: You are about to delete an APPROVED report!\n\nThis will permanently remove:\n• Your original Excel file\n• Corrected Excel file (if any)\n• The approved report from Firebase\n• All associated images and data\n• Your Review Code\n• This will decrease your Approved Reports count by 1\n\nThis action CANNOT be undone.\n\nAre you absolutely sure?'
+        : '⚠️ Are you sure you want to delete this rejected submission?\n\nThis will permanently remove:\n• Your uploaded Excel file\n• Corrected file (if any)\n• All submission data\n\nThis action CANNOT be undone.';
+    
+    if (!confirm(warningMessage)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/delete-completed-review', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                session_id: sessionId,
+                region: region,
+                user_email: currentUserEmail
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`✅ Successfully deleted!\n\n${result.message}\n\nTotal files removed: ${result.deleted_count}`);
+            
+            // Refresh both completed reviews and approved count
+            showCompletedReviews();
+            loadUserApprovedCount();
+        } else {
+            alert('❌ Error: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('❌ Network error: ' + error.message);
+        console.error(error);
     }
 }
 
