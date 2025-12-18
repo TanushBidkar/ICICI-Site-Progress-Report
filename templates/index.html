@@ -535,9 +535,9 @@
 
     <div class="form-grid">
         <div class="form-group">
-            <label for="branch_area">Branch Area</label>
-            <input type="text" id="branch_area" name="branch_area">
-        </div>
+    <label for="branch_area">Branch Area</label>
+    <input type="text" id="branch_area" name="branch_area" placeholder="Enter area in sqft">
+</div>
         <div class="form-group">
             <label for="branch_code">Branch Code</label>
             <input type="text" id="branch_code" name="branch_code" readonly style="background-color: #f0f0f0;">
@@ -1499,7 +1499,7 @@ document.getElementById('sol_id').addEventListener('input', async function() {
     }
 
     // 2. Check Firebase if this SOL ID exists
-    if (solId.length > 3) { // Only check if ID is meaningful (e.g., > 3 chars)
+    if (solId.length >= 1) {// Only check if ID is meaningful (e.g., > 3 chars)
         try {
             const response = await fetch('/get-project-name', {
                 method: 'POST',
@@ -1518,6 +1518,43 @@ document.getElementById('sol_id').addEventListener('input', async function() {
     }
 });
 
+
+// Auto-add "sqft" to Branch Area
+// Auto-add "sqft" to Branch Area - IMPROVED VERSION
+// Auto-add "sqft" to Branch Area - NO SPACE VERSION
+// Auto-add "sqft" to Branch Area - NO SPACE VERSION
+document.getElementById('branch_area').addEventListener('blur', function() {
+    let value = this.value.trim();
+    
+    // Remove any existing "sqft" text first (case insensitive)
+    value = value.replace(/sqft$/i, '').trim();
+    
+    // If value exists and is a number, add sqft
+    if (value && value !== '' && !isNaN(value)) {
+        this.value = value + 'sqft';  // ✅ NO SPACE
+    } else if (value === '') {
+        this.value = '';
+    }
+});
+
+// Remove "sqft" when user focuses to edit
+document.getElementById('branch_area').addEventListener('focus', function() {
+    let value = this.value.trim();
+    
+    // Remove sqft suffix for editing
+    if (value.endsWith('sqft') || value.endsWith('SQFT')) {
+        value = value.replace(/sqft$/i, '').trim();
+        this.value = value;
+    }
+});
+
+// Prevent non-numeric input (allow only numbers)
+document.getElementById('branch_area').addEventListener('keypress', function(e) {
+    // Allow only numbers, backspace, and delete
+    if (!/[0-9]/.test(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+        e.preventDefault();
+    }
+});
 /* =========================================
    NAVIGATION & VALIDATION
    ========================================= */
@@ -2571,7 +2608,7 @@ async function showPendingReviews() {
             body: JSON.stringify({
                 user_email: currentUserEmail,
                 region: currentRegion,
-                user_type: isReviewer ? 'reviewer' : 'user'
+                user_type: 'both'
             })
         });
         
@@ -2581,45 +2618,51 @@ async function showPendingReviews() {
             let html = '<h3 style="color: #ff9800; margin-bottom: 20px;">⏳ Pending Reviews</h3>';
             
             data.reviews.forEach(review => {
-                html += `
-                    <div style="background: white; border: 2px solid #ff9800; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
-                                <h4 style="color: #667eea; margin: 0;">SOL ID: ${review.sol_id} | Visit: ${review.visit_no}</h4>
-                                <p style="margin: 10px 0;">📤 Submitted by: <strong>${review.user_name}</strong> (${review.user_email})</p>
-                                <p style="margin: 5px 0;">📅 Submitted: ${formatDateTimeDDMMYYYY(review.submitted_at)}</p>  
-                                ${isReviewer ? `<p style="margin: 5px 0;">📧 Reviewer: <strong>You</strong></p>` : `<p style="margin: 5px 0;">👤 Reviewer: ${review.reviewer_email}</p>`}
-                                
-                                ${review.user_comments ? `
-                                    <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #ffc107;">
-                                        <strong style="color: #856404;">💬 Submitter Comments:</strong>
-                                        <p style="margin: 5px 0 0 0; color: #856404;">${review.user_comments}</p>
-                                    </div>
-                                ` : ''}
-                            </div>
-                            <span style="background: #ff9800; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; white-space: nowrap;">PENDING</span>
+    // ✅ NEW: Check if current user is the SUBMITTER or the REVIEWER for THIS specific file
+    const isSubmitter = (review.user_email === currentUserEmail);
+    const isReviewerForThisFile = (review.reviewer_email === currentUserEmail);
+    
+    html += `
+        <div style="background: white; border: 2px solid #ff9800; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                    <h4 style="color: #667eea; margin: 0;">SOL ID: ${review.sol_id} | Visit: ${review.visit_no}</h4>
+                    <p style="margin: 10px 0;">📤 Submitted by: <strong>${review.user_name}</strong> ${isSubmitter ? '(You)' : '(' + review.user_email + ')'}</p>
+                    <p style="margin: 5px 0;">📅 Submitted: ${formatDateTimeDDMMYYYY(review.submitted_at)}</p>  
+                    <p style="margin: 5px 0;">👤 Reviewer: ${isReviewerForThisFile ? '<strong>You</strong>' : review.reviewer_email}</p>
+                    
+                    ${review.user_comments ? `
+                        <div style="background: #fff3cd; padding: 12px; border-radius: 8px; margin-top: 10px; border-left: 4px solid #ffc107;">
+                            <strong style="color: #856404;">💬 Submitter Comments:</strong>
+                            <p style="margin: 5px 0 0 0; color: #856404;">${review.user_comments}</p>
                         </div>
-                        
-                      <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
-    <button class="btn btn-primary" id="downloadPendingBtn_${review.session_id}" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
-        📥 Download Excel
-    </button>
-    
-    ${isReviewer ? `
-        <button class="btn" style="background: #28a745; color: white;" onclick="openReviewModal('${review.session_id}', '${review.region}', '${review.sol_id}', '${review.visit_no}')">
-            ✅ Process Review
-        </button>
-    ` : ''}
-    
-    ${!isReviewer ? `
-    <button class="btn" id="deletePendingBtn_${review.session_id}" style="background: #dc3545; color: white;" onclick="deletePendingReview('${review.session_id}', '${review.region}')">
-        🗑️ Delete Submission
-    </button>
-` : ''}
-</div>
-                    </div>
-                `;
-            });
+                    ` : ''}
+                </div>
+                <span style="background: #ff9800; color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; white-space: nowrap;">PENDING</span>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap;">
+                <button class="btn btn-primary" id="downloadPendingBtn_${review.session_id}" onclick="downloadReviewFile('${review.session_id}', '${review.region}', 'original', 'pending')">
+                    📥 Download Excel
+                </button>
+                
+                ${isReviewerForThisFile ? `
+                    <!-- ✅ Only show "Process Review" if user is the REVIEWER (not submitter) -->
+                    <button class="btn" style="background: #28a745; color: white;" onclick="openReviewModal('${review.session_id}', '${review.region}', '${review.sol_id}', '${review.visit_no}')">
+                        ✅ Process Review
+                    </button>
+                ` : ''}
+                
+                ${isSubmitter ? `
+                    <!-- ✅ Only show "Delete" if user is the SUBMITTER -->
+                    <button class="btn" id="deletePendingBtn_${review.session_id}" style="background: #dc3545; color: white;" onclick="deletePendingReview('${review.session_id}', '${review.region}')">
+                        🗑️ Delete Submission
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+});
             
             container.innerHTML = html;
         } else {
@@ -2643,7 +2686,7 @@ async function showCompletedReviews() {
             body: JSON.stringify({
                 user_email: currentUserEmail,
                 region: currentRegion,
-                user_type: isReviewer ? 'reviewer' : 'user'
+                user_type: 'both'  // ✅ Changed to 'both'
             })
         });
         
@@ -2749,22 +2792,31 @@ async function showAllApprovedReports() {
             
             data.reports.forEach(report => {
                 html += `
-                    <div style="background: white; border: 2px solid #28a745; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                            <span style="background:#e8f5e9; color:#28a745; padding:5px 10px; border-radius:15px; font-weight:bold; font-size:0.9em;">Approved</span>
-                            <small style="color:#666;">Visit ${report.visit_no}</small>
-                        </div>
-                        
-                        <div style="margin-bottom: 15px;">
-                            <h4 style="color: #333; margin: 0 0 5px 0;">SOL ID: ${report.sol_id}</h4>
-                            <p style="color: #666; margin: 5px 0; font-size: 0.95em;">
-                                📅 Date: <strong>${report.date_of_visit}</strong>
-                            </p>
-                            <p style="color: #666; margin: 5px 0; font-size: 0.95em; word-break: break-all;">
-                                📂 Branch Name: <br><strong>${report.filename}</strong>
-                            </p>
-                        </div>
-
+    <div style="background: white; border: 2px solid #28a745; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <span style="background:#e8f5e9; color:#28a745; padding:5px 10px; border-radius:15px; font-weight:bold; font-size:0.9em;">Approved</span>
+            <small style="color:#666;">Visit ${report.visit_no}</small>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <h4 style="color: #333; margin: 0 0 5px 0;">SOL ID: ${report.sol_id}</h4>
+            
+            <p style="color: #666; margin: 5px 0; font-size: 0.95em;">
+                📅 Date: <strong>${report.date_of_visit}</strong>
+            </p>
+            
+            <p style="color: #666; margin: 5px 0; font-size: 0.95em;">
+                👤 Uploaded By: <strong>${report.uploaded_by || 'N/A'}</strong>
+            </p>
+            
+            <p style="color: #666; margin: 5px 0; font-size: 0.95em;">
+                🏢 TKO Vendor: <strong>${report.tko_vendor || 'N/A'}</strong>
+            </p>
+            
+            <p style="color: #666; margin: 5px 0; font-size: 0.95em; word-break: break-all;">
+                📂 Branch Name: <br><strong>${report.filename}</strong>
+            </p>
+        </div>
                         <a href="${report.download_url}" download="${report.filename}" class="btn" style="background: #667eea; color: white; width: 100%; text-align: center; text-decoration: none; display: block; padding: 10px 0;">
                             📥 Download Report
                         </a>
