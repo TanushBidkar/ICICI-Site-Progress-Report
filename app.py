@@ -1611,7 +1611,7 @@ def get_pending_reviews():
         data = request.json
         user_email = data.get('user_email')
         region = data.get('region')
-        user_type = data.get('user_type')  # 'reviewer' or 'user'
+        user_type = data.get('user_type')  # 'reviewer', 'user', or 'both'
         
         pending_reviews = []
         
@@ -1632,7 +1632,12 @@ def get_pending_reviews():
                 if metadata_blob.exists():
                     metadata = json.loads(metadata_blob.download_as_string())
                     
-                    if user_type == 'reviewer' and metadata.get('reviewer_email') == user_email:
+                    # ✅ NEW LOGIC: Show if user is reviewer OR submitter
+                    if user_type == 'both':
+                        # Show if they are the reviewer OR the submitter
+                        if metadata.get('reviewer_email') == user_email or metadata.get('user_email') == user_email:
+                            pending_reviews.append(metadata)
+                    elif user_type == 'reviewer' and metadata.get('reviewer_email') == user_email:
                         pending_reviews.append(metadata)
                     elif user_type == 'user' and metadata.get('user_email') == user_email:
                         pending_reviews.append(metadata)
@@ -1685,7 +1690,6 @@ def delete_pending_review():
     except Exception as e:
         print(f"Error deleting pending review: {e}")
         return jsonify({'error': str(e)}), 500
-
 @app.route('/get-completed-reviews', methods=['POST'])
 def get_completed_reviews():
     try:
@@ -1713,7 +1717,11 @@ def get_completed_reviews():
                 if metadata_blob.exists():
                     metadata = json.loads(metadata_blob.download_as_string())
                     
-                    if user_type == 'reviewer' and metadata.get('reviewer_email') == user_email:
+                    # ✅ NEW LOGIC: Show if user is reviewer OR submitter
+                    if user_type == 'both':
+                        if metadata.get('reviewer_email') == user_email or metadata.get('user_email') == user_email:
+                            completed_reviews.append(metadata)
+                    elif user_type == 'reviewer' and metadata.get('reviewer_email') == user_email:
                         completed_reviews.append(metadata)
                     elif user_type == 'user' and metadata.get('user_email') == user_email:
                         completed_reviews.append(metadata)
@@ -1914,16 +1922,34 @@ def submit_review_decision():
             final_public_blob = bucket.blob(final_public_path)
             final_public_blob.make_public()
             
-            # Also ensure data.json exists in final location (Copy from pending or temp)
-            # Try copying from temp_drafts as a fallback to ensure date_of_visit is available
+            # ✅ UPDATED: Copy data.json AND add uploaded_by + tko_vendor fields
             try:
+                # First, try to get data.json from temp_drafts
                 draft_json_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/data.json"
                 final_json_path = f"ICICI_Site_Progress_Report/{region}/{sol_id}/Visit_{visit_no}/data.json"
                 draft_blob = bucket.blob(draft_json_path)
+
                 if draft_blob.exists():
-                    bucket.copy_blob(draft_blob, bucket, final_json_path)
+                    # Load existing data
+                    existing_data = json.loads(draft_blob.download_as_string())
+
+                    # ✅ Add uploaded_by from review metadata
+                    existing_data['uploaded_by'] = metadata['user_name']
+
+                    # ✅ Ensure tko_vendor is included (it should already be there from form)
+                    # No need to modify tko_vendor as it comes from the form data
+
+                    # Save updated data.json to final location
+                    final_data_blob = bucket.blob(final_json_path)
+                    final_data_blob.upload_from_string(
+                        json.dumps(existing_data), 
+                        content_type='application/json'
+                    )
+                else:
+                    print(f"Warning: data.json not found at {draft_json_path}")
+
             except Exception as e:
-                print(f"Warning: Could not copy data.json: {e}")
+                print(f"Warning: Could not process data.json: {e}")
 
             # Increment user count logic (keep existing logic)
             user_email = metadata['user_email']
@@ -2018,6 +2044,7 @@ def get_all_approved_reports():
                         break
                 
                 # Get details from JSON
+                # Get details from JSON
                 json_data = info.get('json', {})
                 date_val = json_data.get('date_of_visit', '')
                 
@@ -2031,13 +2058,19 @@ def get_all_approved_reports():
                     except:
                         formatted_date = date_val
                 
+                # ✅ NEW: Get uploaded_by and tko_vendor from JSON
+                uploaded_by = json_data.get('uploaded_by', 'N/A')
+                tko_vendor = json_data.get('civil_vendor', 'N/A')
+                
                 reports.append({
                     'sol_id': info['sol_id'],
                     'visit_no': info['visit_no'],
                     'date_of_visit': formatted_date,
                     'project_name': json_data.get('project_name', 'Unknown Project'),
                     'filename': selected_file['name'],
-                    'download_url': selected_file['url']
+                    'download_url': selected_file['url'],
+                    'uploaded_by': uploaded_by,  # ✅ NEW
+                    'tko_vendor': tko_vendor      # ✅ NEW
                 })
         
         return jsonify({'reports': reports})
