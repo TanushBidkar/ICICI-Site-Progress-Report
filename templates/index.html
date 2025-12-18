@@ -1151,89 +1151,127 @@
         <h2>Select Region & Reviewer</h2>
     </div>
 
-    <div class="form-grid">
-        <div class="form-group">
-            <label for="region_select">Select Region *</label>
-            <select id="region_select" required onchange="loadReviewers()">
-                <option value="">Choose Region</option>
-                <option value="West">West</option>
-                <option value="East">East</option>
-                <option value="South">South</option>
-                <option value="North">North</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="reviewer_select">Select Reviewer *</label>
-            <select id="reviewer_select" required disabled>
-                <option value="">First select a region</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="user_email_input">Your Email *</label>
-            <input type="email" id="user_email_input" required placeholder="your.email@cushwake.com">
-        </div>
-
-        <div class="form-group">
-            <label for="user_name_input">Your Name *</label>
-            <input type="text" id="user_name_input" required placeholder="Your Full Name">
-        </div>
-
-        <div class="form-group">
-            <label for="sol_id_confirm">SOL ID *</label>
-            <input type="text" id="sol_id_confirm" required>
-        </div>
-
-        <div class="form-group">
-            <label for="visit_no_confirm">Visit Number *</label>
-            <input type="text" id="visit_no_confirm" required>
+    <!-- ✅ INSTRUCTION BOX -->
+    <div style="background: #fff3cd; border-left: 5px solid #ffc107; padding: 20px; margin-bottom: 30px; border-radius: 8px;">
+        <h3 style="color: #856404; margin-top: 0; margin-bottom: 15px;">⚠️ Important: Please Review Your Downloaded Excel File First</h3>
+        
+        <div style="color: #856404; line-height: 1.8;">
+            <p style="margin-bottom: 12px;"><strong>Before submitting for review, please complete these steps:</strong></p>
+            
+            <ol style="margin-left: 20px;">
+                <li style="margin-bottom: 10px;">
+                    <strong>Download the Excel file</strong> and check all details in all three sections (Progress Report, Photographs, Quality & Challenges)
+                </li>
+                
+                <li style="margin-bottom: 10px;">
+                    <strong>Check all photographs</strong> carefully - ensure they fit properly within their cells. If any image doesn't fit well, please resize it manually in Excel
+                </li>
+                
+                <li style="margin-bottom: 10px;">
+                    <strong>Review the "Quality and Critical Challenges" section</strong> - check if all text fits properly in the cells and is fully readable. If text is cut off, manually increase the row height in Excel
+                </li>
+                
+                <li style="margin-bottom: 10px;">
+                    <strong>Only after confirming everything looks correct</strong>, come back to this page and proceed with the review submission below
+                </li>
+            </ol>
+            
+            <!-- ✅ CHECKBOX -->
+            <div style="margin-top: 20px; padding: 15px; background: white; border-radius: 8px; border: 2px solid #ffc107;">
+                <label style="display: flex; align-items: center; cursor: pointer; font-size: 1.1em;">
+                    <input type="checkbox" id="confirmReviewCheckbox" onchange="enableReviewForm()" style="width: 20px; height: 20px; margin-right: 12px; cursor: pointer;">
+                    <span style="color: #333; font-weight: bold;">
+                        ✅ I have reviewed my Excel file and confirmed all details are correct
+                    </span>
+                </label>
+            </div>
         </div>
     </div>
 
-    <div class="form-group" style="grid-column: 1 / -1;">
-    <label for="user_comments">Comments for Reviewer (Optional)</label>
-    <textarea id="user_comments" placeholder="Add any notes or instructions for the reviewer..." style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; resize: vertical;"></textarea>
-</div>
+    <!-- ✅ FORM WRAPPER (DISABLED BY DEFAULT) -->
+    <div id="reviewFormWrapper" style="opacity: 0.4; pointer-events: none; transition: all 0.3s ease;">
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="region_select">Select Region *</label>
+                <select id="region_select" required onchange="loadReviewers()">
+                    <option value="">Choose Region</option>
+                    <option value="West">West</option>
+                    <option value="East">East</option>
+                    <option value="South">South</option>
+                    <option value="North">North</option>
+                </select>
+            </div>
 
-    <div style="background: white; padding: 40px; border: 3px dashed #667eea; border-radius: 15px; text-align: center; margin-top: 20px;">
-    <h3 style="color: #667eea; margin-bottom: 15px;">Upload Your Downloaded Excel File</h3>
-    
-    <input type="file" id="reviewExcelUpload" accept=".xlsx,.xls" style="display: none;" onchange="handleReviewFileSelect(this)">
-    
-    <button type="button" class="btn btn-primary" onclick="document.getElementById('reviewExcelUpload').click()" style="padding: 15px 30px;">
-        📁 Choose Excel File
-    </button>
-    
-    <div id="reviewFileInfo" style="display: none; margin-top: 20px;">
-        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; display: inline-block;">
-            <p style="margin: 0; color: #28a745; font-weight: bold;">✅ <span id="reviewFileName"></span></p>
+            <div class="form-group">
+                <label for="reviewer_select">Select Reviewer *</label>
+                <select id="reviewer_select" required disabled>
+                    <option value="">First select a region</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="user_email_input">Your Email *</label>
+                <input type="email" id="user_email_input" required placeholder="your.email@cushwake.com">
+            </div>
+
+            <div class="form-group">
+                <label for="user_name_input">Your Name *</label>
+                <input type="text" id="user_name_input" required placeholder="Your Full Name">
+            </div>
+
+            <div class="form-group">
+                <label for="sol_id_confirm">SOL ID *</label>
+                <input type="text" id="sol_id_confirm" required>
+            </div>
+
+            <div class="form-group">
+                <label for="visit_no_confirm">Visit Number *</label>
+                <input type="text" id="visit_no_confirm" required>
+            </div>
         </div>
-        
-        <!-- ✅ RENAME DIRECTLY HERE -->
-        <div style="margin-top: 15px;">
-    <label style="font-weight: bold; display: block; margin-bottom: 8px;">
-        
-    </label>
+
+        <div class="form-group" style="grid-column: 1 / -1;">
+            <label for="user_comments">Comments for Reviewer (Optional)</label>
+            <textarea id="user_comments" placeholder="Add any notes or instructions for the reviewer..." style="width: 100%; min-height: 80px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; resize: vertical;"></textarea>
+        </div>
+
+        <div style="background: white; padding: 40px; border: 3px dashed #667eea; border-radius: 15px; text-align: center; margin-top: 20px;">
+            <h3 style="color: #667eea; margin-bottom: 15px;">Upload Your Downloaded Excel File</h3>
+            
+            <input type="file" id="reviewExcelUpload" accept=".xlsx,.xls" style="display: none;" onchange="handleReviewFileSelect(this)">
+            
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('reviewExcelUpload').click()" style="padding: 15px 30px;">
+                📁 Choose Excel File
+            </button>
+            
+            <div id="reviewFileInfo" style="display: none; margin-top: 20px;">
+                <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; display: inline-block;">
+                    <p style="margin: 0; color: #28a745; font-weight: bold;">✅ <span id="reviewFileName"></span></p>
+                </div>
+                
+                <div style="margin-top: 15px; display: flex; justify-content: center;">
     <input type="text" 
        id="custom_filename" 
-       placeholder="File will be auto-renamed (e.g., ICICI_Mumbai_1570_report) don't rename the file on your own" 
-       style="padding: 12px; width: 100%; border: 2px solid #ccc; border-radius: 8px; font-size: 1em; background-color: #e9ecef; color: #6c757d; cursor: not-allowed;" 
+       placeholder="File will be auto-renamed (e.g., ICICI_Mumbai_1570_report) - don't rename the file on your own" 
+       style="padding: 12px; width: 70%; border: 2px solid #ccc; border-radius: 8px; font-size: 0.9em; background-color: #e9ecef; color: #6c757d; cursor: not-allowed; text-align: center;" 
        readonly>
-    <p style="color: #666; font-size: 0.85em; margin-top: 5px;">
-        
-    </p>
 </div>
-    </div>
-</div>
+            </div>
+        </div>
 
-    <div class="btn-group" style="margin-top: 40px;">
-        <button type="button" class="btn btn-secondary" onclick="goBackToStep4()">← Back to Edit</button>
-        <button type="button" class="btn btn-primary" onclick="submitForReview()" id="submitReviewBtn" disabled style="opacity: 0.5; background: #28a745 !important;">
-            📤 Submit for Review
-        </button>
-    </div>
-</div>
+        <div class="btn-group" style="margin-top: 40px;">
+            <button type="button" class="btn btn-secondary" onclick="goBackToStep4()">← Back to Edit</button>
+            <button type="button" class="btn btn-primary" onclick="submitForReview()" id="submitReviewBtn" disabled style="opacity: 0.5; background: #28a745 !important;">
+                📤 Submit for Review
+            </button>
+        </div>
+    
+    </div> <!-- End of reviewFormWrapper -->
+
+</div> <!-- End of Section 5 -->
+
+    
 
 <!-- Section 6: Review Dashboard -->
 <div class="section" id="section6">
@@ -3509,6 +3547,37 @@ async function deleteCompletedReview(sessionId, region, isApproved) {
             btn.innerHTML = originalText;
             btn.style.opacity = "1";
             btn.style.cursor = "pointer";
+        }
+    }
+}
+
+// ✅ ADD THIS NEW FUNCTION
+function enableReviewForm() {
+    const checkbox = document.getElementById('confirmReviewCheckbox');
+    const formWrapper = document.getElementById('reviewFormWrapper');
+    const submitBtn = document.getElementById('submitReviewBtn');
+    
+    if (checkbox.checked) {
+        // Enable the form
+        formWrapper.style.opacity = '1';
+        formWrapper.style.pointerEvents = 'auto';
+        
+        // Show success message
+        checkbox.parentElement.style.background = '#d4edda';
+        checkbox.parentElement.style.borderColor = '#28a745';
+    } else {
+        // Disable the form again
+        formWrapper.style.opacity = '0.4';
+        formWrapper.style.pointerEvents = 'none';
+        
+        // Reset styling
+        checkbox.parentElement.style.background = 'white';
+        checkbox.parentElement.style.borderColor = '#ffc107';
+        
+        // Disable submit button
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
         }
     }
 }
