@@ -53,23 +53,25 @@ db = firestore.client()
 # Region-wise reviewers configuration
 REGION_REVIEWERS = {
     'West': [
-        {'email': 'richarddsilva@company.com', 'name': 'Richard Dsilva'},
-        {'email': 'abhaypatwa@company.com', 'name': 'Abhay Patwa'},
-        {'email': 'niwantghadge@company.com', 'name': 'Niwant Ghadge'},
-        {'email': 'chaman.gotya@cushwake.com', 'name': 'Chaman Gotya'}
+        {'email': 'richard.dsilva@cushwake.com', 'name': 'Richard Dsilva'},
+        {'email': 'abhay.patwa@cushwake.com', 'name': 'Abhay Patwa'},
+        {'email': 'niwant.ghadge@cushwake.com', 'name': 'Niwant Ghadge'},
+        {'email': 'chaman.gotya@cushwake.com', 'name': 'Coders Testing'},
+        {'email': 'tejas.kombade1@cushwake.com', 'name': 'Tejas Kombade'},
+        {'email': 'ramchandra.kokare@cushwake.com', 'name': 'Ramchandra Kokare'}
     ],
     'East': [
-        {'email': 'subhomoybhakat@company.com', 'name': 'Subhomoy Bhakat'},
-        {'email': 'dipayansutar@company.com', 'name': 'Dipayan Sutar'},
-        {'email': 'souryabratachatterjee@company.com', 'name': 'Sourya Chatterjee'}
+        {'email': 'subhomoy.bhakat@cushwake.com', 'name': 'Subhomoy Bhakat'},
+        {'email': 'dipayan.sutar@cushwake.com', 'name': 'Dipayan Sutar'},
+        {'email': 'sourya.chatterjee@cushwake.com', 'name': 'Sourya Chatterjee'}
     ],
     'South': [
-        {'email': 'adhithyaram@company.com', 'name': 'Adithyaraman Natarajan'},
-        {'email': 'arjunkumarm@company.com', 'name': 'Arjun Kumar M'}
+        {'email': 'adhithyaram.natarajan@cushwake.com', 'name': 'Adithyaraman Natarajan'},
+        {'email': 'arjun.kumar1@cushwake.com', 'name': 'Arjun Kumar M'}
     ],
     'North': [
-        {'email': 'marufkhan@company.com', 'name': 'Maruf Khan'},
-        {'email': 'amandeepmaurya@company.com', 'name': 'Amandeep Mourya'}
+        {'email': 'maruf.khan@cushwake.com', 'name': 'Maruf Khan'},
+        {'email': 'amandeep.maurya@cushwake.com', 'name': 'Amandeep Mourya'}
     ]
 }
 
@@ -1089,6 +1091,17 @@ def fill_quality_sheet(wb, data):
     
     # Define Green color (Accent 6, Lighter 80%) - RGB: E2EFDA
     green_fill = PatternFill(start_color='E2EFDA', end_color='E2EFDA', fill_type='solid')
+
+    def fmt_date(date_str):
+        if not date_str: return ''
+        try:
+            # Parse the YYYY-MM-DD string from HTML
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            # Return in DD/MM/YYYY format (e.g., 01/12/2025)
+            # If you want text month (01/December/2025), use: '%d/%B/%Y'
+            return date_obj.strftime('%d/%m/%Y') 
+        except:
+            return date_str
     
     # Fill header information (rows 2-9) with Calibri 12
     ws['B2'] = data.get('quality_project_title', '')
@@ -1103,16 +1116,16 @@ def fill_quality_sheet(wb, data):
     ws['B5'] = data.get('hvac_vendor', '')
     ws['B5'].font = Font(name='Calibri', size=12)
     
-    ws['B6'] = data.get('project_start_date', '')
+    ws['B6'] = fmt_date(data.get('project_start_date', ''))
     ws['B6'].font = Font(name='Calibri', size=12)
     
-    ws['B7'] = data.get('planned_handover_date', '')
+    ws['B7'] = fmt_date(data.get('planned_handover_date', ''))
     ws['B7'].font = Font(name='Calibri', size=12)
     
-    ws['B8'] = data.get('actual_handover_date', '')
+    ws['B8'] = fmt_date(data.get('actual_handover_date', ''))
     ws['B8'].font = Font(name='Calibri', size=12)
     
-    ws['B9'] = data.get('quality_date_of_visit', '')
+    ws['B9'] = fmt_date(data.get('quality_date_of_visit', ''))
     ws['B9'].font = Font(name='Calibri', size=12)
     
     # Start building dynamic sections
@@ -1137,7 +1150,6 @@ def fill_quality_sheet(wb, data):
     current_row += 1
     
     # Fill Quality Observations data
-    # Fill Quality Observations data
     filled_count = 0
     for i in range(6):
         obs_value = data.get(f'quality_observation_{i}', '').strip()
@@ -1153,7 +1165,7 @@ def fill_quality_sheet(wb, data):
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
             
-            # ✅ CALCULATE ROW HEIGHT BASED ON TEXT LENGTH
+            # Calculate row height based on text length
             row_height = calculate_row_height(obs_value, font_size=12, cell_width=50)
             ws.row_dimensions[current_row].height = row_height
             
@@ -1166,6 +1178,7 @@ def fill_quality_sheet(wb, data):
     if filled_count == 0:
         ws[f'A{current_row}'] = 1
         ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
+        ws.merge_cells(f'B{current_row}:D{current_row}')
         ws[f'B{current_row}'] = ''
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{current_row}'].border = thin_border
@@ -1199,6 +1212,8 @@ def fill_quality_sheet(wb, data):
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
+            # ✅ ADD THIS: Merge B, C, D columns
+            ws.merge_cells(f'B{current_row}:D{current_row}')
             ws[f'B{current_row}'] = delay_value
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -1214,6 +1229,7 @@ def fill_quality_sheet(wb, data):
     if filled_count == 0:
         ws[f'A{current_row}'] = 1
         ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
+        ws.merge_cells(f'B{current_row}:D{current_row}')
         ws[f'B{current_row}'] = ''
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{current_row}'].border = thin_border
@@ -1247,6 +1263,8 @@ def fill_quality_sheet(wb, data):
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
+            # ✅ ADD THIS: Merge B, C, D columns
+            ws.merge_cells(f'B{current_row}:D{current_row}')
             ws[f'B{current_row}'] = challenge_value
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -1262,6 +1280,7 @@ def fill_quality_sheet(wb, data):
     if filled_count == 0:
         ws[f'A{current_row}'] = 1
         ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
+        ws.merge_cells(f'B{current_row}:D{current_row}')
         ws[f'B{current_row}'] = ''
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{current_row}'].border = thin_border
@@ -1295,6 +1314,8 @@ def fill_quality_sheet(wb, data):
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
+            # ✅ ADD THIS: Merge B, C, D columns
+            ws.merge_cells(f'B{current_row}:D{current_row}')
             ws[f'B{current_row}'] = critical_value
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -1310,6 +1331,7 @@ def fill_quality_sheet(wb, data):
     if filled_count == 0:
         ws[f'A{current_row}'] = 1
         ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
+        ws.merge_cells(f'B{current_row}:D{current_row}')
         ws[f'B{current_row}'] = ''
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{current_row}'].border = thin_border
@@ -1343,6 +1365,8 @@ def fill_quality_sheet(wb, data):
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
+            # ✅ ADD THIS: Merge B, C, D columns
+            ws.merge_cells(f'B{current_row}:D{current_row}')
             ws[f'B{current_row}'] = hindrance_value
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -1358,6 +1382,7 @@ def fill_quality_sheet(wb, data):
     if filled_count == 0:
         ws[f'A{current_row}'] = 1
         ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
+        ws.merge_cells(f'B{current_row}:D{current_row}')
         ws[f'B{current_row}'] = ''
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{current_row}'].border = thin_border
@@ -1391,6 +1416,8 @@ def fill_quality_sheet(wb, data):
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
+            # ✅ ADD THIS: Merge B, C, D columns
+            ws.merge_cells(f'B{current_row}:D{current_row}')
             ws[f'B{current_row}'] = other_value
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
@@ -1406,6 +1433,7 @@ def fill_quality_sheet(wb, data):
     if filled_count == 0:
         ws[f'A{current_row}'] = 1
         ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
+        ws.merge_cells(f'B{current_row}:D{current_row}')
         ws[f'B{current_row}'] = ''
         for col in ['A', 'B', 'C', 'D']:
             ws[f'{col}{current_row}'].border = thin_border
