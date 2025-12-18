@@ -489,7 +489,16 @@
                             </select>
                         </div>
                     </div>
-                    <div style="text-align: center; margin: 30px 0;">
+                    <div class="btn-group">
+    <div></div>
+    <button type="button" class="btn btn-primary" onclick="nextSection(1)">
+        Next →
+    </button>
+</div>
+
+<hr style="border: none; border-top: 2px solid #667eea; margin: 40px 0;">
+
+<div style="text-align: center; margin: 30px 0;">
     <button type="button" class="btn" style="background: #17a2b8; color: white; padding: 15px 30px; font-size: 1.1em;" onclick="showReviewOptionsModal()">
         📊 Site Progress Report Reviews
     </button>
@@ -514,13 +523,8 @@
         </div>
     </div>
 </div>
-                    <div class="btn-group">
-                        <div></div>
-                        <button type="button" class="btn btn-primary" onclick="nextSection(1)">
-                            Next →
-                        </button>
-                    </div>
-                </div>
+                    
+</div>
 
                 <!-- Section 2: Progress Report -->
 <div class="section" id="section2">
@@ -1209,13 +1213,15 @@
         <!-- ✅ RENAME DIRECTLY HERE -->
         <div style="margin-top: 15px;">
     <label style="font-weight: bold; display: block; margin-bottom: 8px;">
-        Rename File for Review (Optional)
+        
     </label>
-    <input type="text" id="custom_filename" placeholder="e.g., ICICI_Mumbai_1570_report" 
-           style="padding: 12px; width: 100%; border: 2px solid #667eea; border-radius: 8px; font-size: 1em;">
+    <input type="text" 
+       id="custom_filename" 
+       placeholder="File will be auto-renamed (e.g., ICICI_Mumbai_1570_report) don't rename the file on your own" 
+       style="padding: 12px; width: 100%; border: 2px solid #ccc; border-radius: 8px; font-size: 1em; background-color: #e9ecef; color: #6c757d; cursor: not-allowed;" 
+       readonly>
     <p style="color: #666; font-size: 0.85em; margin-top: 5px;">
-        📌 Recommended format: ICICI_{BranchName}_{SOL_ID}_report<br>
-        Leave blank to keep: "${document.getElementById('sol_id_confirm')?.value || 'SOL_ID'}_Visit_${document.getElementById('visit_no_confirm')?.value || '1'}.xlsx"
+        
     </p>
 </div>
     </div>
@@ -2752,23 +2758,25 @@ function checkIfReviewer(email) {
 // Define REGION_REVIEWERS constant in JavaScript
 const REGION_REVIEWERS = {
     'West': [
-        {email: 'richarddsilva@company.com', name: 'Richard Dsilva'},
-        {email: 'abhaypatwa@company.com', name: 'Abhay Patwa'},
-        {email: 'niwantghadge@company.com', name: 'Niwant Ghadge'},
-        {email: 'chaman.gotya@cushwake.com', name: 'Chaman Gotya'}
+        {email: 'richard.dsilva@cushwake.com', name: 'Richard Dsilva'},
+        {email: 'abhay.patwa@cushwake.com', name: 'Abhay Patwa'},
+        {email: 'niwant.ghadge@cushwake.com', name: 'Niwant Ghadge'},
+        {email: 'chaman.gotya@cushwake.com', name: 'Coders Testing'},
+        {email: 'tejas.kombade1@cushwake.com', name: 'Tejas Kombade'},
+        {email: 'ramchandra.kokare@cushwake.com', name: 'Ramchandra Kokare'}
     ],
     'East': [
-        {email: 'subhomoybhakat@company.com', name: 'Subhomoy Bhakat'},
-        {email: 'dipayansutar@company.com', name: 'Dipayan Sutar'},
-        {email: 'souryabratachatterjee@company.com', name: 'Sourya Chatterjee'}
+        {email: 'subhomoy.bhakat@cushwake.com', name: 'Subhomoy Bhakat'},
+        {email: 'dipayan.sutar@cushwake.com', name: 'Dipayan Sutar'},
+        {email: 'sourya.chatterjee@cushwake.com', name: 'Sourya Chatterjee'}
     ],
     'South': [
-        {email: 'adhithyaram@company.com', name: 'Adithyaraman Natarajan'},
-        {email: 'arjunkumarm@company.com', name: 'Arjun Kumar M'}
+        {email: 'adhithyaram.natarajan@cushwake.com', name: 'Adithyaraman Natarajan'},
+        {email: 'arjun.kumar1@cushwake.com', name: 'Arjun Kumar M'}
     ],
     'North': [
-        {email: 'marufkhan@company.com', name: 'Maruf Khan'},
-        {email: 'amandeepmaurya@company.com', name: 'Amandeep Mourya'}
+        {email: 'maruf.khan@cushwake.com', name: 'Maruf Khan'},
+        {email: 'amandeep.maurya@cushwake.com', name: 'Amandeep Mourya'}
     ]
 };
 
@@ -3151,10 +3159,10 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
     // ✅ Function to verify login with backend
-    async function verifyLogin() {
+   async function verifyLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value.trim();
-    const selectedRegion = document.getElementById('loginRegion').value; // Get region from dropdown
+    const selectedRegion = document.getElementById('loginRegion').value;
     const errorDiv = document.getElementById('loginError');
     const loginBtn = document.querySelector('#loginModal .btn-primary');
 
@@ -3164,7 +3172,12 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Show loading state
+    if (!selectedRegion) {
+        errorDiv.textContent = 'Please select a region';
+        errorDiv.style.display = 'block';
+        return;
+    }
+
     loginBtn.textContent = 'Verifying...';
     loginBtn.disabled = true;
 
@@ -3178,53 +3191,49 @@ document.addEventListener('DOMContentLoaded', function() {
         const result = await response.json();
 
         if (result.success) {
-            // Login Success
-            currentUserEmail = result.email;
-            currentUserName = result.name;
-            
-            // ✅ CRITICAL FIX: If user is a Reviewer, use their assigned region. 
-            // If they are a normal user, use the region they selected in the dropdown.
-            if (result.region) {
-                currentRegion = result.region; // User is a Reviewer (auto-assigned)
-            } else {
-                if (!selectedRegion) {
-                    errorDiv.textContent = 'Please select a Region to view your reports.';
+            // ✅ NEW: Check if user is a reviewer
+            let userActualRegion = null;
+            for (const region in REGION_REVIEWERS) {
+                if (REGION_REVIEWERS[region].some(r => r.email === email)) {
+                    userActualRegion = region;
+                    break;
+                }
+            }
+
+            // ✅ CRITICAL CHECK: If reviewer, force correct region
+            if (userActualRegion) {
+                if (selectedRegion !== userActualRegion) {
+                    errorDiv.textContent = `❌ You are a reviewer for ${userActualRegion} region. Please select "${userActualRegion}" region to continue.`;
                     errorDiv.style.display = 'block';
                     loginBtn.textContent = 'Login & View';
                     loginBtn.disabled = false;
                     return;
                 }
-                currentRegion = selectedRegion; // User is a Submitter (manual selection)
+                currentRegion = userActualRegion;
+            } else {
+                // Normal user - can select any region
+                currentRegion = selectedRegion;
             }
+
+            currentUserEmail = result.email;
+            currentUserName = result.name;
             
-            // Save session
             localStorage.setItem('currentUser', result.email);
             localStorage.setItem('userName', result.name);
             
-            // Close modal and show dashboard
             document.getElementById('loginModal').remove();
             showReviewDashboard();
         } else {
-            // Show error from backend
             errorDiv.textContent = result.error || 'Login failed';
             errorDiv.style.display = 'block';
         }
     } catch (error) {
         errorDiv.textContent = 'Server error. Please try again.';
         errorDiv.style.display = 'block';
-        console.error(error);
     } finally {
-        // Reset button if we didn't return early
-        if (loginBtn.disabled && loginBtn.textContent !== 'Verifying...') {
-             // button state is handled inside success/error blocks usually, 
-             // but ensuring it resets on error catch
-             loginBtn.textContent = 'Login & View';
-             loginBtn.disabled = false;
-        } else if (!document.getElementById('loginModal')) {
-            // Modal removed, nothing to do
-        } else {
-             loginBtn.textContent = 'Login & View';
-             loginBtn.disabled = false;
+        if (document.getElementById('loginModal')) {
+            loginBtn.textContent = 'Login & View';
+            loginBtn.disabled = false;
         }
     }
 }
