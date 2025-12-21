@@ -1168,7 +1168,7 @@
                 </li>
                 
                 <li style="margin-bottom: 10px;">
-                    <strong>Review the "Quality and Critical Challenges" section</strong> - check if all text fits properly in the cells and is fully readable. If text is cut off, manually increase the row height in Excel
+                    <strong>Review the "Quality and Critical Challenges" section</strong> - check if all text fits properly in the cells and is fully readable. <strong>Also, check all grammatical sentences and spellings to ensure every phrase is proper and grammatically correct.</strong> If text is cut off, manually increase the row height in Excel
                 </li>
                 
                 <li style="margin-bottom: 10px;">
@@ -1600,6 +1600,12 @@ async function nextSection(section) {
                 return;
             }
         }
+        if (nextBtn) {
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = originalText;
+    nextBtn.style.opacity = "1";
+    nextBtn.style.cursor = "pointer";
+}
     }
 
     document.getElementById(`section${section}`).classList.remove('active');
@@ -1721,8 +1727,8 @@ function addWorkEntry() {
             <img id="work_preview_${workCount}" style="max-width: 250px; border: 2px solid #667eea; border-radius:8px;">
         </div>
         <div class="form-group">
-            <label>Remarks</label>
-            <textarea name="work_remark_${workCount}" placeholder="Enter remarks..."></textarea>
+            <label>Location</label>
+            <textarea name="work_remark_${workCount}" placeholder="Enter Location Details..."></textarea>
         </div>
     `;
     container.appendChild(entry);
@@ -1761,7 +1767,7 @@ function addQualityEntry() {
             <img id="qual_preview_${qualityCount}" style="max-width: 250px; border: 2px solid #667eea; border-radius:8px;">
         </div>
         <div class="form-group">
-            <label>Remarks</label>
+            <label>Location</label>
             <textarea name="qual_remark_${qualityCount}" placeholder="Enter remediation steps..."></textarea>
         </div>
     `;
@@ -1801,8 +1807,8 @@ function addMakeModelEntry() {
             <img id="make_preview_${makeCount}" style="max-width: 250px; border: 2px solid #667eea; border-radius:8px;">
         </div>
         <div class="form-group">
-            <label>Remarks</label>
-            <textarea name="make_remark_${makeCount}" placeholder="Enter remarks..."></textarea>
+            <label>Location</label>
+            <textarea name="make_remark_${makeCount}" placeholder="Enter Location Details..."></textarea>
         </div>
     `;
     container.appendChild(entry);
