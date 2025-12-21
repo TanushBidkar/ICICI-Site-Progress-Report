@@ -71,7 +71,7 @@ REGION_REVIEWERS = {
     ],
     'North': [
         {'email': 'maruf.khan@cushwake.com', 'name': 'Maruf Khan'},
-        {'email': 'amandeep.maurya@cushwake.com', 'name': 'Amandeep Mourya'}
+        {'email': 'amandeep.mauraya@cushwake.com', 'name': 'Amandeep Mourya'}
     ]
 }
 
@@ -515,8 +515,27 @@ def fill_progress_report(wb, data):
     unmerge_and_write(ws, 'G2', f'Branch Area: {branch_area}')   # Branch Area with label
     
     unmerge_and_write(ws, 'B3', data.get('branch_code', ''))   # Branch Code
-    unmerge_and_write(ws, 'E3', data.get('date_of_visit', '')) # Date of visit (goes in E3)
-    
+    # Format Date of Visit to DD/MM/YYYY
+    date_visit = data.get('date_of_visit', '')
+    if date_visit:
+        try:
+            # Convert from YYYY-MM-DD to DD/MM/YYYY
+            date_obj = datetime.strptime(date_visit, '%Y-%m-%d')
+            date_visit = date_obj.strftime('%d/%m/%Y')
+        except ValueError:
+            pass # Keep original format if parsing fails
+
+    # Format Date of Visit to DD/MM/YYYY
+    date_visit = data.get('date_of_visit', '')
+    if date_visit:
+        try:
+            # Convert from YYYY-MM-DD to DD/MM/YYYY
+            date_obj = datetime.strptime(date_visit, '%Y-%m-%d')
+            date_visit = date_obj.strftime('%d/%m/%Y')
+        except ValueError:
+            pass # Keep original format if parsing fails
+
+    unmerge_and_write(ws, 'E3', date_visit) # Date of visit (goes in E3)
     # Visit no should show "Visit No: X" format
     visit_no = data.get('visit_no', '')
     unmerge_and_write(ws, 'G3', f'Visit No: {visit_no}')      # Visit no with label
@@ -893,7 +912,7 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
         ws[f'B{current_row}'] = 'Items'
         ws[f'C{current_row}'] = 'Description'
         ws[f'D{current_row}'] = 'Photographs'
-        ws[f'E{current_row}'] = 'Remarks'
+        ws[f'E{current_row}'] = 'Location'
         
         for col in ['A', 'B', 'C', 'D', 'E']:
             ws[f'{col}{current_row}'].font = Font(name='Calibri', size=20, bold=True)
@@ -975,6 +994,12 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
     # ====================
     # 3. MAKE/MODEL INSPECTION SECTION
     # ====================
+    # ====================
+    # 3. MAKE/MODEL INSPECTION SECTION
+    # ====================
+    # ====================
+    # 3. MAKE/MODEL INSPECTION SECTION
+    # ====================
     make_count = int(data.get('make_count', 0))
     
     if make_count > 0:
@@ -997,7 +1022,7 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
         ws[f'B{current_row}'] = 'Items'
         ws[f'C{current_row}'] = 'Make/Model Observed'
         ws[f'D{current_row}'] = 'Photographs'
-        ws[f'E{current_row}'] = 'Remarks'
+        ws[f'E{current_row}'] = 'Location'
         
         for col in ['A', 'B', 'C', 'D', 'E']:
             ws[f'{col}{current_row}'].font = Font(name='Calibri', size=20, bold=True)
@@ -1061,6 +1086,11 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
                     img_byte_arr.seek(0)
                     
                     xl_img = XLImage(img_byte_arr)
+                    
+                    # ✅ FIX: EXPLICITLY SET WIDTH AND HEIGHT
+                    xl_img.width = 430
+                    xl_img.height = 320
+                    
                     xl_img.anchor = f'D{current_row}'
                     ws.add_image(xl_img)
                     
@@ -2047,7 +2077,7 @@ def get_all_approved_reports():
                 # Get details from JSON
                 json_data = info.get('json', {})
                 date_val = json_data.get('date_of_visit', '')
-                
+
                 # Format Date (YYYY-MM-DD -> DD/MM/YYYY)
                 formatted_date = "N/A"
                 if date_val:
@@ -2057,11 +2087,11 @@ def get_all_approved_reports():
                             formatted_date = f"{parts[2]}/{parts[1]}/{parts[0]}"
                     except:
                         formatted_date = date_val
-                
+
                 # ✅ NEW: Get uploaded_by and tko_vendor from JSON
                 uploaded_by = json_data.get('uploaded_by', 'N/A')
                 tko_vendor = json_data.get('civil_vendor', 'N/A')
-                
+
                 reports.append({
                     'sol_id': info['sol_id'],
                     'visit_no': info['visit_no'],
