@@ -1110,6 +1110,33 @@ def fill_photographs_sheet(wb, data, files, sol_id, visit_no):
 def fill_quality_sheet(wb, data):
     """Fill the Quality and Critical Challenges sheet - REMOVES EMPTY ROWS"""
     ws = wb['Quality and Critical challenges']
+    # Get current visit number
+    current_visit = int(data.get('visit_no', 1))
+    
+    # If Visit 2 or higher, load previous visit data
+    previous_visits_data = []
+    if current_visit > 1:
+        sol_id = data.get('sol_id')
+        for v in range(1, current_visit):
+            # Try to load data.json from previous visits
+            prev_paths = [
+                f"ICICI_Site_Progress_Report/{region}/{sol_id}/Visit_{v}/data.json"
+                for region in ['West', 'East', 'South', 'North']
+            ]
+            prev_paths.append(f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{v}/data.json")
+            
+            for path in prev_paths:
+                try:
+                    blob = bucket.blob(path)
+                    if blob.exists():
+                        prev_data = json.loads(blob.download_as_string())
+                        previous_visits_data.append({
+                            'visit_no': v,
+                            'data': prev_data
+                        })
+                        break
+                except:
+                    continue
     
     # Define border style
     thin_border = Border(
@@ -1158,315 +1185,407 @@ def fill_quality_sheet(wb, data):
     ws['B9'] = fmt_date(data.get('quality_date_of_visit', ''))
     ws['B9'].font = Font(name='Calibri', size=12)
     
-    # Start building dynamic sections
-    current_row = 10
+    
     
     # ===== SECTION HEADER: Quality Observations =====
-    ws[f'A{current_row}'] = 'Sr. No.'
-    ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'A{current_row}'].fill = green_fill
-    ws[f'A{current_row}'].border = thin_border
+    # For Visit 1, show normal headers
+    # Start building dynamic sections
+    # ===== ROW 10: VISIT NUMBER HEADERS =====
+    current_row = 10
+
+    # Column A: "Visit No" label
+    ws['A10'] = 'Visit No'
+    ws['A10'].font = Font(name='Times New Roman', size=12, bold=True)
+    ws['A10'].alignment = Alignment(horizontal='center', vertical='center')
+    ws['A10'].fill = green_fill
+    ws['A10'].border = thin_border
     
-    ws.merge_cells(f'B{current_row}:D{current_row}')
-    ws[f'B{current_row}'] = 'Quality Observations'
-    ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'B{current_row}'].fill = green_fill
-    ws[f'B{current_row}'].border = thin_border
-    ws[f'C{current_row}'].border = thin_border
-    ws[f'D{current_row}'].border = thin_border
+    # Columns B-D: Visit 1
+    ws.merge_cells('B10:D10')
+    ws['B10'] = 'Visit No:- 1'
+    ws['B10'].font = Font(name='Times New Roman', size=12, bold=True)
+    ws['B10'].alignment = Alignment(horizontal='center', vertical='center')
+    ws['B10'].fill = green_fill
+    ws['B10'].border = thin_border
     
-    current_row += 1
+    # Columns E-G: Visit 2 (if applicable)
+    if current_visit >= 2:
+        ws.merge_cells('E10:G10')
+        ws['E10'] = 'Visit No:- 2'
+        ws['E10'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws['E10'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['E10'].fill = green_fill
+        ws['E10'].border = thin_border
     
-    # Fill Quality Observations data
-    filled_count = 0
-    for i in range(6):
-        obs_value = data.get(f'quality_observation_{i}', '').strip()
-        if obs_value:
-            ws[f'A{current_row}'] = filled_count + 1
-            ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-            ws[f'A{current_row}'].border = thin_border
-            
-            # Merge B, C, D columns for the observation text
-            ws.merge_cells(f'B{current_row}:D{current_row}')
-            ws[f'B{current_row}'] = obs_value
-            ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            
-            # Calculate row height based on text length
-            row_height = calculate_row_height(obs_value, font_size=12, cell_width=50)
-            ws.row_dimensions[current_row].height = row_height
-            
-            for col in ['A', 'B', 'C', 'D']:
-                ws[f'{col}{current_row}'].border = thin_border
-            
-            filled_count += 1
-            current_row += 1
+    # Columns H-J: Visit 3 (if applicable)
+    if current_visit >= 3:
+        ws.merge_cells('H10:J10')
+        ws['H10'] = 'Visit No:- 3'
+        ws['H10'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws['H10'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['H10'].fill = green_fill
+        ws['H10'].border = thin_border
     
-    if filled_count == 0:
-        ws[f'A{current_row}'] = 1
-        ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-        ws.merge_cells(f'B{current_row}:D{current_row}')
-        ws[f'B{current_row}'] = ''
-        for col in ['A', 'B', 'C', 'D']:
-            ws[f'{col}{current_row}'].border = thin_border
+    # Column K: Visit 4 (if applicable)
+    if current_visit >= 4:
+        ws['K10'] = 'Visit No:- 4'
+        ws['K10'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws['K10'].alignment = Alignment(horizontal='center', vertical='center')
+        ws['K10'].fill = green_fill
+        ws['K10'].border = thin_border
+    
+    current_row = 11  # Start sections from row 11
+    # Define orange_fill if not already defined
+    orange_fill = PatternFill(start_color='FFC000', end_color='FFC000', fill_type='solid')
+
+    # ===== SECTION HEADER: Quality Observations =====
+    # For Visit 1, show normal headers
+    # Define sections to process to avoid code repetition
+    sections = [
+        ("Quality Observations", "quality_observation"),
+        ("Site Delay Reasons", "site_delay_reason"),
+        ("Collaborative Challenges/Inputs", "collaborative_challenge"),
+        ("Criticalities", "criticality"),
+        ("Hindrances", "hindrance"),
+        ("Others", "other")
+    ]
+
+    for section_title, field_prefix in sections:
+        # ===== SECTION HEADER =====
+        # Build header row with all visits side by side
+        ws[f'A{current_row}'] = 'Sr. No.'
+        ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'A{current_row}'].fill = green_fill
+        ws[f'A{current_row}'].border = thin_border
+
+        # Column B-D: Visit 1 Data
+        ws[f'B{current_row}'] = section_title
+        ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'B{current_row}'].fill = green_fill
+        ws[f'B{current_row}'].border = thin_border
+
+        ws[f'C{current_row}'] = 'Status'
+        ws[f'C{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws[f'C{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'C{current_row}'].fill = green_fill
+        ws[f'C{current_row}'].border = thin_border
+
+        ws[f'D{current_row}'] = 'Remark'
+        ws[f'D{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+        ws[f'D{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+        ws[f'D{current_row}'].fill = green_fill
+        ws[f'D{current_row}'].border = thin_border
+
+        # If Visit 2+, add columns E-G
+        if current_visit >= 2:
+            ws[f'E{current_row}'] = section_title
+            ws[f'E{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'E{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'E{current_row}'].fill = green_fill
+            ws[f'E{current_row}'].border = thin_border
+            
+            ws[f'F{current_row}'] = 'Status'
+            ws[f'F{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'F{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'F{current_row}'].fill = green_fill
+            ws[f'F{current_row}'].border = thin_border
+            
+            ws[f'G{current_row}'] = 'Remark'
+            ws[f'G{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'G{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'G{current_row}'].fill = green_fill
+            ws[f'G{current_row}'].border = thin_border
+
+        # If Visit 3+, add columns H-J
+        if current_visit >= 3:
+            ws[f'H{current_row}'] = section_title
+            ws[f'H{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'H{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'H{current_row}'].fill = green_fill
+            ws[f'H{current_row}'].border = thin_border
+            
+            ws[f'I{current_row}'] = 'Status'
+            ws[f'I{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'I{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'I{current_row}'].fill = green_fill
+            ws[f'I{current_row}'].border = thin_border
+            
+            ws[f'J{current_row}'] = 'Remark'
+            ws[f'J{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'J{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'J{current_row}'].fill = green_fill
+            ws[f'J{current_row}'].border = thin_border
+
+        # If Visit 4+, add Column K (No Status/Remark for current visit)
+        if current_visit >= 4:
+            ws[f'K{current_row}'] = section_title
+            ws[f'K{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
+            ws[f'K{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'K{current_row}'].fill = green_fill
+            ws[f'K{current_row}'].border = thin_border
+
         current_row += 1
-    
-    # ===== SECTION HEADER: Site Delay Reasons =====
-    ws[f'A{current_row}'] = 'Sr. No.'
-    ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'A{current_row}'].fill = green_fill
-    ws[f'A{current_row}'].border = thin_border
-    
-    ws.merge_cells(f'B{current_row}:D{current_row}')
-    ws[f'B{current_row}'] = 'Site Delay Reasons'
-    ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'B{current_row}'].fill = green_fill
-    ws[f'B{current_row}'].border = thin_border
-    ws[f'C{current_row}'].border = thin_border
-    ws[f'D{current_row}'].border = thin_border
-    
-    current_row += 1
-    
-    # Fill Site Delay Reasons data
-    filled_count = 0
-    for i in range(6):
-        delay_value = data.get(f'site_delay_reason_{i}', '').strip()
-        if delay_value:
-            ws[f'A{current_row}'] = filled_count + 1
+
+        # ✅ FILL DATA ROW BY ROW (Horizontal Logic)
+        max_observations = 6  # Always show 6 rows per section
+
+        for i in range(max_observations):
+            # Serial Number in Column A
+            ws[f'A{current_row}'] = i + 1
             ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
             ws[f'A{current_row}'].border = thin_border
             
-            # ✅ ADD THIS: Merge B, C, D columns
-            ws.merge_cells(f'B{current_row}:D{current_row}')
-            ws[f'B{current_row}'] = delay_value
+            # Initialize row variables
+            
+            
+            # ==============================
+            # ===== VISIT 1 DATA (B,C,D) ===
+            # ==============================
+            visit1_obs = ''
+            visit1_status = ''
+            visit1_remark = ''
+
+            if current_visit > 1:
+                # ✅ FIX 1: Get Visit 1 observation text from previous visits data
+                for prev_visit_info in previous_visits_data:
+                    if prev_visit_info['visit_no'] == 1:
+                        visit1_obs = prev_visit_info['data'].get(f'{field_prefix}_{i}', '').strip()
+                        break
+                
+                # ✅ FIX 2: Get the LATEST status and remark from the most recent visit
+                for check_visit in range(current_visit, 1, -1):  # Start from current, go backwards
+                    status_key = f'prev_visit1_{field_prefix}_{i}_status'
+                    remark_key = f'prev_visit1_{field_prefix}_{i}_remark'
+
+                    check_data = None
+                    if check_visit == current_visit:
+                        check_data = data
+                    else:
+                        for pv in previous_visits_data:
+                            if pv['visit_no'] == check_visit:
+                                check_data = pv['data']
+                                break
+
+                    if check_data:
+                        temp_status = check_data.get(status_key, '').strip()
+                        temp_remark = check_data.get(remark_key, '').strip()
+
+                        # Use the FIRST status/remark found (most recent visit)
+                        if temp_status and not visit1_status:
+                            visit1_status = temp_status
+                        if temp_remark and not visit1_remark:
+                            visit1_remark = temp_remark
+
+                        # Stop if we found both
+                        if visit1_status and visit1_remark:
+                            break
+            else:
+                # Current visit IS Visit 1 - get observation from current data
+                visit1_obs = data.get(f'{field_prefix}_{i}', '').strip()
+            
+            ws[f'B{current_row}'] = visit1_obs
             ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
             ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            row_height = calculate_row_height(delay_value, font_size=12, cell_width=50)
-            ws.row_dimensions[current_row].height = row_height
+            ws[f'B{current_row}'].border = thin_border
             
-            for col in ['A', 'B', 'C', 'D']:
-                ws[f'{col}{current_row}'].border = thin_border
+            ws[f'C{current_row}'] = visit1_status
+            ws[f'C{current_row}'].font = Font(name='Calibri', size=12)
+            ws[f'C{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+            ws[f'C{current_row}'].border = thin_border
             
-            filled_count += 1
+            ws[f'D{current_row}'] = visit1_remark
+            ws[f'D{current_row}'].font = Font(name='Calibri', size=12)
+            ws[f'D{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+            ws[f'D{current_row}'].border = thin_border
+            
+            
+
+            # ==============================
+            # ===== VISIT 2 DATA (E,F,G) ===
+            # ==============================
+            if current_visit >= 2:
+                visit2_obs = ''
+                visit2_status = ''
+                visit2_remark = ''
+                
+                # Get the observation text (always from Visit 2 data)
+                if current_visit == 2:
+                    visit2_obs = data.get(f'{field_prefix}_{i}', '').strip()
+                else:
+                    for prev_visit_info in previous_visits_data:
+                        if prev_visit_info['visit_no'] == 2:
+                            visit2_obs = prev_visit_info['data'].get(f'{field_prefix}_{i}', '').strip()
+                            break
+
+                # ✅ FIX: Get the LATEST status and remark for Visit 2 from the most recent visit
+                visit2_status = ''
+                visit2_remark = ''
+                
+                for check_visit in range(current_visit, 1, -1):  # Check current down to 2
+                    status_key = f'prev_visit2_{field_prefix}_{i}_status'
+                    remark_key = f'prev_visit2_{field_prefix}_{i}_remark'
+                    
+                    check_data = None
+                    if check_visit == current_visit:
+                        check_data = data
+                    else:
+                        for pv in previous_visits_data:
+                            if pv['visit_no'] == check_visit:
+                                check_data = pv['data']
+                                break
+                    
+                    if check_data:
+                        temp_status = check_data.get(status_key, '').strip()
+                        temp_remark = check_data.get(remark_key, '').strip()
+                        
+                        # Use the FIRST status/remark found (most recent visit)
+                        if temp_status and not visit2_status:
+                            visit2_status = temp_status
+                        if temp_remark and not visit2_remark:
+                            visit2_remark = temp_remark
+                            
+                        # Stop if we found both
+                        if visit2_status and visit2_remark:
+                            break
+                
+                ws[f'E{current_row}'] = visit2_obs
+                ws[f'E{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'E{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                ws[f'E{current_row}'].border = thin_border
+                
+                ws[f'F{current_row}'] = visit2_status
+                ws[f'F{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'F{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+                ws[f'F{current_row}'].border = thin_border
+                
+                ws[f'G{current_row}'] = visit2_remark
+                ws[f'G{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'G{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                ws[f'G{current_row}'].border = thin_border
+                
+                
+
+            # ==============================
+            # ===== VISIT 3 DATA (H,I,J) ===
+            # ==============================
+            if current_visit >= 3:
+                visit3_obs = ''
+                visit3_status = ''
+                visit3_remark = ''
+                
+                # Get the observation text (always from Visit 3 data)
+                if current_visit == 3:
+                    visit3_obs = data.get(f'{field_prefix}_{i}', '').strip()
+                else:
+                    for prev_visit_info in previous_visits_data:
+                        if prev_visit_info['visit_no'] == 3:
+                            visit3_obs = prev_visit_info['data'].get(f'{field_prefix}_{i}', '').strip()
+                            break
+
+                # ✅ FIX: Get the LATEST status and remark for Visit 3 from the most recent visit
+                visit3_status = ''
+                visit3_remark = ''
+
+                for check_visit in range(current_visit, 2, -1):  # Check current down to 3
+                    status_key = f'prev_visit3_{field_prefix}_{i}_status'
+                    remark_key = f'prev_visit3_{field_prefix}_{i}_remark'
+                    
+                    check_data = None
+                    if check_visit == current_visit:
+                        check_data = data
+                    else:
+                        for pv in previous_visits_data:
+                            if pv['visit_no'] == check_visit:
+                                check_data = pv['data']
+                                break
+                    
+                    if check_data:
+                        temp_status = check_data.get(status_key, '').strip()
+                        temp_remark = check_data.get(remark_key, '').strip()
+                        
+                        # Use the FIRST status/remark found (most recent visit)
+                        if temp_status and not visit3_status:
+                            visit3_status = temp_status
+                        if temp_remark and not visit3_remark:
+                            visit3_remark = temp_remark
+                            
+                        # Stop if we found both
+                        if visit3_status and visit3_remark:
+                            break
+                
+                ws[f'H{current_row}'] = visit3_obs
+                ws[f'H{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'H{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                ws[f'H{current_row}'].border = thin_border
+                
+                ws[f'I{current_row}'] = visit3_status
+                ws[f'I{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'I{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
+                ws[f'I{current_row}'].border = thin_border
+                
+                ws[f'J{current_row}'] = visit3_remark
+                ws[f'J{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'J{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                ws[f'J{current_row}'].border = thin_border
+                
+                
+            # ==============================
+            # ===== VISIT 4 DATA (K) =======
+            # ==============================
+            if current_visit >= 4:
+                visit4_obs = data.get(f'{field_prefix}_{i}', '').strip()
+                
+                ws[f'K{current_row}'] = visit4_obs
+                ws[f'K{current_row}'].font = Font(name='Calibri', size=12)
+                ws[f'K{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
+                ws[f'K{current_row}'].border = thin_border
+                
+                
+            
+            # Calculate row height based on ALL text fields in this row
+            texts_to_measure = []
+            
+            # Add Visit 1 texts
+            if visit1_obs:
+                texts_to_measure.append(visit1_obs)
+            if visit1_remark:
+                texts_to_measure.append(visit1_remark)
+            
+            # Add Visit 2 texts (if applicable)
+            if current_visit >= 2:
+                if visit2_obs:
+                    texts_to_measure.append(visit2_obs)
+                if visit2_remark:
+                    texts_to_measure.append(visit2_remark)
+            
+            # Add Visit 3 texts (if applicable)
+            if current_visit >= 3:
+                if visit3_obs:
+                    texts_to_measure.append(visit3_obs)
+                if visit3_remark:
+                    texts_to_measure.append(visit3_remark)
+            
+            # Add Visit 4 texts (if applicable)
+            if current_visit >= 4:
+                if visit4_obs:
+                    texts_to_measure.append(visit4_obs)
+            
+            # Calculate maximum height needed
+            max_height = 15  # Minimum height
+            for text in texts_to_measure:
+                if text and str(text).strip():
+                    # Calculate height for this text
+                    text_height = calculate_row_height(str(text), font_size=12, cell_width=50)
+                    max_height = max(max_height, text_height)
+            
+            # Set the row height
+            ws.row_dimensions[current_row].height = max_height
             current_row += 1
-    
-    if filled_count == 0:
-        ws[f'A{current_row}'] = 1
-        ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-        ws.merge_cells(f'B{current_row}:D{current_row}')
-        ws[f'B{current_row}'] = ''
-        for col in ['A', 'B', 'C', 'D']:
-            ws[f'{col}{current_row}'].border = thin_border
-        current_row += 1
-    
-    # ===== SECTION HEADER: Collaborative Challenges/Inputs =====
-    ws[f'A{current_row}'] = 'Sr. No.'
-    ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'A{current_row}'].fill = green_fill
-    ws[f'A{current_row}'].border = thin_border
-    
-    ws.merge_cells(f'B{current_row}:D{current_row}')
-    ws[f'B{current_row}'] = 'Collaborative Challenges/Inputs'
-    ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'B{current_row}'].fill = green_fill
-    ws[f'B{current_row}'].border = thin_border
-    ws[f'C{current_row}'].border = thin_border
-    ws[f'D{current_row}'].border = thin_border
-    
-    current_row += 1
-    
-    # Fill Collaborative Challenges data
-    filled_count = 0
-    for i in range(6):
-        challenge_value = data.get(f'collaborative_challenge_{i}', '').strip()
-        if challenge_value:
-            ws[f'A{current_row}'] = filled_count + 1
-            ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-            ws[f'A{current_row}'].border = thin_border
-            
-            # ✅ ADD THIS: Merge B, C, D columns
-            ws.merge_cells(f'B{current_row}:D{current_row}')
-            ws[f'B{current_row}'] = challenge_value
-            ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            row_height = calculate_row_height(challenge_value, font_size=12, cell_width=50)
-            ws.row_dimensions[current_row].height = row_height
-            
-            for col in ['A', 'B', 'C', 'D']:
-                ws[f'{col}{current_row}'].border = thin_border
-            
-            filled_count += 1
-            current_row += 1
-    
-    if filled_count == 0:
-        ws[f'A{current_row}'] = 1
-        ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-        ws.merge_cells(f'B{current_row}:D{current_row}')
-        ws[f'B{current_row}'] = ''
-        for col in ['A', 'B', 'C', 'D']:
-            ws[f'{col}{current_row}'].border = thin_border
-        current_row += 1
-    
-    # ===== SECTION HEADER: Criticalities =====
-    ws[f'A{current_row}'] = 'Sr. No.'
-    ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'A{current_row}'].fill = green_fill
-    ws[f'A{current_row}'].border = thin_border
-    
-    ws.merge_cells(f'B{current_row}:D{current_row}')
-    ws[f'B{current_row}'] = 'Criticalities'
-    ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'B{current_row}'].fill = green_fill
-    ws[f'B{current_row}'].border = thin_border
-    ws[f'C{current_row}'].border = thin_border
-    ws[f'D{current_row}'].border = thin_border
-    
-    current_row += 1
-    
-    # Fill Criticalities data
-    filled_count = 0
-    for i in range(6):
-        critical_value = data.get(f'criticality_{i}', '').strip()
-        if critical_value:
-            ws[f'A{current_row}'] = filled_count + 1
-            ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-            ws[f'A{current_row}'].border = thin_border
-            
-            # ✅ ADD THIS: Merge B, C, D columns
-            ws.merge_cells(f'B{current_row}:D{current_row}')
-            ws[f'B{current_row}'] = critical_value
-            ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            row_height = calculate_row_height(critical_value, font_size=12, cell_width=50)
-            ws.row_dimensions[current_row].height = row_height
-            
-            for col in ['A', 'B', 'C', 'D']:
-                ws[f'{col}{current_row}'].border = thin_border
-            
-            filled_count += 1
-            current_row += 1
-    
-    if filled_count == 0:
-        ws[f'A{current_row}'] = 1
-        ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-        ws.merge_cells(f'B{current_row}:D{current_row}')
-        ws[f'B{current_row}'] = ''
-        for col in ['A', 'B', 'C', 'D']:
-            ws[f'{col}{current_row}'].border = thin_border
-        current_row += 1
-    
-    # ===== SECTION HEADER: Hindrances =====
-    ws[f'A{current_row}'] = 'Sr. No.'
-    ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'A{current_row}'].fill = green_fill
-    ws[f'A{current_row}'].border = thin_border
-    
-    ws.merge_cells(f'B{current_row}:D{current_row}')
-    ws[f'B{current_row}'] = 'Hindrances'
-    ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'B{current_row}'].fill = green_fill
-    ws[f'B{current_row}'].border = thin_border
-    ws[f'C{current_row}'].border = thin_border
-    ws[f'D{current_row}'].border = thin_border
-    
-    current_row += 1
-    
-    # Fill Hindrances data
-    filled_count = 0
-    for i in range(6):
-        hindrance_value = data.get(f'hindrance_{i}', '').strip()
-        if hindrance_value:
-            ws[f'A{current_row}'] = filled_count + 1
-            ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-            ws[f'A{current_row}'].border = thin_border
-            
-            # ✅ ADD THIS: Merge B, C, D columns
-            ws.merge_cells(f'B{current_row}:D{current_row}')
-            ws[f'B{current_row}'] = hindrance_value
-            ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            row_height = calculate_row_height(hindrance_value, font_size=12, cell_width=50)
-            ws.row_dimensions[current_row].height = row_height
-            
-            for col in ['A', 'B', 'C', 'D']:
-                ws[f'{col}{current_row}'].border = thin_border
-            
-            filled_count += 1
-            current_row += 1
-    
-    if filled_count == 0:
-        ws[f'A{current_row}'] = 1
-        ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-        ws.merge_cells(f'B{current_row}:D{current_row}')
-        ws[f'B{current_row}'] = ''
-        for col in ['A', 'B', 'C', 'D']:
-            ws[f'{col}{current_row}'].border = thin_border
-        current_row += 1
-    
-    # ===== SECTION HEADER: Others =====
-    ws[f'A{current_row}'] = 'Sr. No.'
-    ws[f'A{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'A{current_row}'].fill = green_fill
-    ws[f'A{current_row}'].border = thin_border
-    
-    ws.merge_cells(f'B{current_row}:D{current_row}')
-    ws[f'B{current_row}'] = 'Others'
-    ws[f'B{current_row}'].font = Font(name='Times New Roman', size=12, bold=True)
-    ws[f'B{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-    ws[f'B{current_row}'].fill = green_fill
-    ws[f'B{current_row}'].border = thin_border
-    ws[f'C{current_row}'].border = thin_border
-    ws[f'D{current_row}'].border = thin_border
-    
-    current_row += 1
-    
-    # Fill Others data
-    filled_count = 0
-    for i in range(6):
-        other_value = data.get(f'other_{i}', '').strip()
-        if other_value:
-            ws[f'A{current_row}'] = filled_count + 1
-            ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'A{current_row}'].alignment = Alignment(horizontal='center', vertical='center')
-            ws[f'A{current_row}'].border = thin_border
-            
-            # ✅ ADD THIS: Merge B, C, D columns
-            ws.merge_cells(f'B{current_row}:D{current_row}')
-            ws[f'B{current_row}'] = other_value
-            ws[f'B{current_row}'].font = Font(name='Calibri', size=12)
-            ws[f'B{current_row}'].alignment = Alignment(horizontal='left', vertical='center', wrap_text=True)
-            row_height = calculate_row_height(other_value, font_size=12, cell_width=50)
-            ws.row_dimensions[current_row].height = row_height
-            
-            for col in ['A', 'B', 'C', 'D']:
-                ws[f'{col}{current_row}'].border = thin_border
-            
-            filled_count += 1
-            current_row += 1
-    
-    if filled_count == 0:
-        ws[f'A{current_row}'] = 1
-        ws[f'A{current_row}'].font = Font(name='Calibri', size=12)
-        ws.merge_cells(f'B{current_row}:D{current_row}')
-        ws[f'B{current_row}'] = ''
-        for col in ['A', 'B', 'C', 'D']:
-            ws[f'{col}{current_row}'].border = thin_border
+
+        # Add a small buffer row between sections
         current_row += 1
 def update_visit_percentages(sol_id, current_visit, data):
     """Update percentages across all visits for the same SOL ID"""
@@ -1537,6 +1656,15 @@ def generate_report():
         temp_blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/draft.xlsx"
         temp_blob = bucket.blob(temp_blob_path)
         temp_blob.upload_from_file(excel_buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+        section4_prefixes = ['quality_observation_', 'site_delay_reason_', 'collaborative_challenge_',
+                             'criticality_', 'hindrance_', 'other_']
+        
+        for prefix in section4_prefixes:
+            for i in range(6):
+                field_name = f"{prefix}{i}"
+                if field_name not in form_data:
+                    form_data[field_name] = ''
         
         # Save JSON temporarily
         json_blob_path = f"ICICI_Site_Progress_Report/temp_drafts/{sol_id}/Visit_{visit_no}/data.json"
